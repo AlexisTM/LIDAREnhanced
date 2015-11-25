@@ -3,8 +3,16 @@
 
 class LIDAREnchanced {
   public:
+/*******************************************************************************
+  Constructor
+*******************************************************************************/
     LIDAREnchanced() {}
-    // Configure lasers
+
+/*******************************************************************************
+  begin : Begin the I2C master device
+
+  If fasti2c is true, use 400kHz I2C
+*******************************************************************************/
     void begin(bool fasti2c = false){
       Wire.begin();
       if (fasti2c) {
@@ -16,6 +24,16 @@ class LIDAREnchanced {
       }
     }
 
+/*******************************************************************************
+  reset : Reset an I2C Lidar
+
+  Software : Write 0x00 at the 0x00 register
+  Hardware : Pull PWR Enable pin down
+
+  Then, set the address again, and configure
+
+  Lidar is the address of the laser to reset
+*******************************************************************************/
     void reset(byte Lidar = 0x62){
       write(Lidar, 0x00, 0x00);
       if(Lidar != 0x62)
@@ -43,6 +61,17 @@ class LIDAREnchanced {
       }
     }
 
+/*******************************************************************************
+  changeAddress : Change the address of one Lidar
+
+returns 0 if success
+        1 if error writing the serial number (byte 1)
+        2 if error writing the serial number (byte 2)
+        3 if error sending the Lidar address
+        4 if error disabling the main address
+        5 if the new Lidar address is already ON
+        6 if the Lidar do not respond
+*******************************************************************************/
     byte changeAddress(byte Lidar, byte newLidar){
       // Return 6 = The device do not respond
       if(!isOnline(Lidar))
@@ -70,7 +99,14 @@ class LIDAREnchanced {
 
       return 0;
     }
+/*******************************************************************************
+  changeAddressMultiPwrEn : Change multiple Lidars addresses
 
+  number : number of Lidar we would like to change the address
+  newLidar : Array of new Lidars addresses
+  pwrEnable : Array of new Lidars power enable lines
+  configuration : The configuration wanted (2 by default)
+*******************************************************************************/
     byte changeAddressMultiPwrEn(byte number, byte * newLidar, byte * pwrEnable, byte configuration = 2){
       // Shutdown them all
       for(int i = 0; i < number; i++){
@@ -90,7 +126,12 @@ class LIDAREnchanced {
       }
     }
 
-    // Check availability
+/*******************************************************************************
+  isBusy : check if the Lidar is in acquisition
+
+  returns true if busy
+          flse if ready to be read
+*******************************************************************************/
     bool isBusy(byte Lidar = 0x62){
       Wire.beginTransmission((byte)Lidar);
       Wire.write(0x01);
@@ -98,12 +139,25 @@ class LIDAREnchanced {
       byte busyFlag = bitRead(Wire.read(), 0);
       return busyFlag != 0;
     }
+
+/*******************************************************************************
+  isOnline : check if something is connected at this address
+
+  returns true if online
+          flse if offline
+*******************************************************************************/
     bool isOnline(byte Lidar = 0x62){
       Wire.beginTransmission(Lidar);
       if(Wire.endTransmission())
         return false;
       return true;
     }
+
+/*******************************************************************************
+  whoisOnline : check the array of Lidar to know if they are online
+
+  Debug only, it prints on Serial1
+*******************************************************************************/
     void whoisOnline(int number, byte * Lidars){
       for(int i = 0; i < number; i++){
         Serial.print("Lidar ");
@@ -112,21 +166,38 @@ class LIDAREnchanced {
           Serial.println(" is ONLINE");
         else
           Serial.println(" is OFFLINE");
-
-
       }
     }
+
+/*******************************************************************************
+  status : check the status of the Lidar
+
+  returns the status register (0x01 for version 21 of the Lidar Software)
+*******************************************************************************/
     byte status(byte Lidar = 0x62){
       byte data[1] = {0};
-      readbyte(Lidar, 0x01, data);
+      readByte(Lidar, 0x01, data);
       return data[0];
     }
 
-    // Read values
+/*******************************************************************************
+  async : start an acquisition
+              - with preamp enabled
+              - with DC stabilization
+
+  returns the nack error (0 if no error)
+*******************************************************************************/
     byte async(byte Lidar = 0x62){
       write(Lidar, 0x00, 0x04);
     }
 
+/*******************************************************************************
+  distance : read and
+              - with preamp enabled
+              - with DC stabilization
+
+  returns the distance in centimeter (-1 = error from I2C)
+*******************************************************************************/
     int distance(byte Lidar = 0x62){
       byte distanceArray[2];
       readWord(Lidar, 0x8f, distanceArray);
@@ -134,25 +205,50 @@ class LIDAREnchanced {
       return (distance);
     }
 
-    // I2C Functions
+/*******************************************************************************
+  write : write a byte to one I2C device at a certain address
+
+  Lidar : the I2C device address
+  regAdr : The I2C foreign register
+  data : The data to put in the regAdr register of the i2c (Lidar) device
+
+  returns the nack packet
+*******************************************************************************/
     byte write(byte Lidar, byte regAdr, byte data){
       Wire.beginTransmission(Lidar);
       Wire.write(regAdr);
       Wire.write(data);
-      int nackCatcher = Wire.endTransmission();
+      byte nackCatcher = Wire.endTransmission();
       return nackCatcher;
     }
 
-    byte readbyte(byte Lidar, byte regAdr, byte * data){
+/*******************************************************************************
+  readByte : read one 8-bit byte from one I2C device
+
+  Lidar : the I2C device address
+  regAdr : The I2C foreign register
+  data : The data array where to put data
+
+  returns the nack packet
+*******************************************************************************/
+    byte readByte(byte Lidar, byte regAdr, byte * data){
       Wire.beginTransmission(Lidar);
       Wire.write(regAdr);
-      int nackCatcher = Wire.endTransmission();
+      byte nackCatcher = Wire.endTransmission();
       Wire.requestFrom(Lidar, byte(1), byte(1));
-      int i = 0;
       data[0] = Wire.read();
       return nackCatcher;
     }
 
+/*******************************************************************************
+  readWord : read two 8-bit byte from one I2C device
+
+  Lidar : the I2C device address
+  regAdr : The I2C foreign register
+  data : The data array where to put data
+
+  returns the nack packet
+*******************************************************************************/
     byte readWord(byte Lidar, byte regAdr, byte * data){
       Wire.beginTransmission(Lidar);
       Wire.write(regAdr);
@@ -163,7 +259,9 @@ class LIDAREnchanced {
       return nackCatcher;
     }
 
-    // Debug informations
+/*******************************************************************************
+  scan : debug function used to show which device is currently on the I2C bus
+*******************************************************************************/
     void scan(){
       delay(1000);
       byte error, address;
@@ -195,6 +293,9 @@ class LIDAREnchanced {
         Serial.println("done\n");
     }
 
+/*******************************************************************************
+  nackError : debug function, show the error if we got a NACK error
+*******************************************************************************/
     byte nackError(byte error) {
       if (error) {
         Serial.println("NackError");
