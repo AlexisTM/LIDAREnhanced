@@ -295,6 +295,10 @@ returns 0 if success
 
 /*******************************************************************************
   nackError : debug function, show the error if we got a NACK error
+
+  error : the byte of error from the I2C device
+
+  returns the error
 *******************************************************************************/
     byte nackError(byte error) {
       if (error) {
@@ -314,5 +318,6 @@ returns 0 if success
             break;
         }
       }
+      return error;
     }
 };
