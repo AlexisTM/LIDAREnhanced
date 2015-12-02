@@ -12,13 +12,12 @@ enum LIDAR_STATE {
   NEED_CONFIGURE     // 15ms passed, we now configure the Lidar
 };
 
-
 class LIDAREnchanced {
   public:
 /*******************************************************************************
   Constructor
 *******************************************************************************/
-    LIDAREnchanced() {}
+    LIDAREnchanced() {};
 
 /*******************************************************************************
   begin : Begin the I2C master device
@@ -34,24 +33,29 @@ class LIDAREnchanced {
           TWBR = ((F_CPU / 400000UL) - 16) / 2; // Set I2C frequency to 400kHz
       #endif
       }
-    }
+    };
 
 /*******************************************************************************
-  reset : Reset an I2C Lidar
+  reset : Reset an I2C Lidar sending an I2C packet
 
   Software : Write 0x00 at the 0x00 register
-  Hardware : Pull PWR Enable pin down
-
-  Then, set the address again, and configure
-
-  Lidar is the address of the laser to reset
 *******************************************************************************/
     void reset(byte Lidar = 0x62){
       write(Lidar, 0x00, 0x00);
       if(Lidar != 0x62)
         changeAddress(0x62, Lidar);
-    }
+    };
 
+/*******************************************************************************
+  configure : Configure the default acquisition mode
+
+  configuration : The configuration of the Lidar
+      - 0 = basic configuration
+      - 1 = faster (Do not read 3 times), bit noisier
+      - 2 = low noise, low sensitivity, less false detection (Default)
+      - 3 = High noise, high sensitivity
+  Lidar : Address of the Lidar (0x62 by default)
+*******************************************************************************/
     void configure(byte configuration = 2, byte Lidar = 0x62){
       switch (configuration) {
       case 0: //  Default configuration
@@ -71,7 +75,7 @@ class LIDAREnchanced {
         write(Lidar, 0x1c, 0x60);
         break;
       }
-    }
+    };
 
 /*******************************************************************************
   changeAddress : Change the address of one Lidar
@@ -110,7 +114,7 @@ returns 0 if success
         return 4;
 
       return 0;
-    }
+    };
 /*******************************************************************************
   changeAddressMultiPwrEn : Change multiple Lidars addresses
 
@@ -136,7 +140,7 @@ returns 0 if success
         delay(20);
         configure(configuration, newLidar[i]);
       }
-    }
+    };
 
 /*******************************************************************************
   isBusy : check if the Lidar is in acquisition
@@ -150,7 +154,7 @@ returns 0 if success
       Wire.requestFrom((byte)Lidar, (byte)1);
       byte busyFlag = bitRead(Wire.read(), 0);
       return busyFlag != 0;
-    }
+    };
 
 /*******************************************************************************
   isOnline : check if something is connected at this address
@@ -163,7 +167,7 @@ returns 0 if success
       if(Wire.endTransmission())
         return false;
       return true;
-    }
+    };
 
 /*******************************************************************************
   whoisOnline : check the array of Lidar to know if they are online
@@ -179,7 +183,7 @@ returns 0 if success
         else
           Serial.println(" is OFFLINE");
       }
-    }
+    };
 
 /*******************************************************************************
   status : check the status of the Lidar
@@ -190,7 +194,7 @@ returns 0 if success
       byte data[1] = {0};
       readByte(Lidar, 0x01, data);
       return data[0];
-    }
+    };
 
 /*******************************************************************************
   async : start an acquisition
@@ -201,7 +205,7 @@ returns 0 if success
 *******************************************************************************/
     byte async(byte Lidar = 0x62){
       write(Lidar, 0x00, 0x04);
-    }
+    };
 
 /*******************************************************************************
   distance : read and
@@ -215,7 +219,7 @@ returns 0 if success
       readWord(Lidar, 0x8f, distanceArray);
       int distance = (distanceArray[0] << 8) + distanceArray[1];
       return (distance);
-    }
+    };
 
 /*******************************************************************************
   write : write a byte to one I2C device at a certain address
@@ -232,7 +236,7 @@ returns 0 if success
       Wire.write(data);
       byte nackCatcher = Wire.endTransmission();
       return nackCatcher;
-    }
+    };
 
 /*******************************************************************************
   readByte : read one 8-bit byte from one I2C device
@@ -250,7 +254,7 @@ returns 0 if success
       Wire.requestFrom(Lidar, byte(1), byte(1));
       data[0] = Wire.read();
       return nackCatcher;
-    }
+    };
 
 /*******************************************************************************
   readWord : read two 8-bit byte from one I2C device
@@ -269,7 +273,7 @@ returns 0 if success
       data[0] = Wire.read();
       data[1] = Wire.read();
       return nackCatcher;
-    }
+    };
 
 /*******************************************************************************
   scan : debug function used to show which device is currently on the I2C bus
@@ -303,7 +307,7 @@ returns 0 if success
         Serial.println("No I2C devices found\n");
       else
         Serial.println("done\n");
-    }
+    };
 
 /*******************************************************************************
   nackError : debug function, show the error if we got a NACK error
@@ -331,5 +335,5 @@ returns 0 if success
         }
       }
       return error;
-    }
+    };
 };
