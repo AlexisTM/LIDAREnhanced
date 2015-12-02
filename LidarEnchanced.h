@@ -1,6 +1,18 @@
 #include <Arduino.h>
 #include <Wire.h>
 
+// We got a Lidar per laser. 
+
+enum LIDAR_STATE {
+  UNKNOW,            // Need to be resetted
+  ACQUISITION_READY, // I started an acquisition, need someone to read it
+  ACQUISITION_DONE,  // I read the data, need to start an acq again
+  NEED_RESET,        // Too much outliers, need to reset
+  WAIT_AFTER_RESET,  // Wait 15ms after you reset the Lidar, we are waiting in this state
+  NEED_CONFIGURE     // 15ms passed, we now configure the Lidar
+};
+
+
 class LIDAREnchanced {
   public:
 /*******************************************************************************
