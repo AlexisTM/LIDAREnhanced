@@ -1,5 +1,16 @@
-//#include "PacketComm.h"
-//#define USE_USBCON
+Use rosserial messages 
+------------------
+
+1. Upload code to the Arduino
+2. Start the message_info_service `rosrun rosserial_python message_info_service.py`
+3. Connect the Arduino and be sure we can open the device `sudo chmod 777 /dev/ttyACM0`
+4. Start the rosserial listening service `rosrun rosserial_server serial_node /dev/ttyACM`
+5. Verify the link via `rostopic list`, `rostopic pub /acquisition/init std_msgs/Empty`
+
+
+Working example :
+
+```
 #include <ros.h>
 #include <sensor_msgs/LaserEcho.h>
 #include <std_msgs/Empty.h>
@@ -52,4 +63,9 @@ void publish(){
   laserEcho_msg.st_echoes = 1.1;
   distpub.publish( &laserEcho_msg );
 }
+```
 
+Fix permission issue 
+-----------------
+
+`sudo usermod -a -G dialout odroid`

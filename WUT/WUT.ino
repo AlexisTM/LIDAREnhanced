@@ -2,12 +2,6 @@
 #include "LidarController.h"
 #include "I2CFunctions.h"
 
-// Only if multiple UART port board
-//#define USE_USBCON
-#include <ros.h>
-#include <laserpack/distance.h>
-//#include <laserpack/init.h>
-
 #include <Wire.h>
 #define WIRE400K true
 /*** Defines : CONFIGURATION ***/
@@ -44,14 +38,6 @@ static KFilter KX;
 static KFilter Ky;
 static KFilter KY;
 
-// ROS communication
-ros::NodeHandle nh;
-laserpack::distance   distance_msg;
-ros::Publisher distpub("/acquisition/distance", &distance_msg);
-//laserpack::init   init_msg;
-//ros::Publisher initpub("/acquisition/init", &init_msg);
-
-
 void beginLidars(){
   // Initialisation of the lidars objects
   LX1.begin(X_LASER_EN, X_LASER_PIN, X_LASER_AD, 2, 'x');
@@ -73,16 +59,8 @@ void beginLidars(){
  // delay(10);
 }
 
-
-void beginROSComm(){
-  nh.initNode();
-  nh.advertise(distpub);
-//  nh.advertise(initpub);
-  pinMode(13, OUTPUT);
-}
-
 void beginFilters(){  
-
+  
   // Initialisation of the lidars objects
   for(byte i = 0; i < 4; i++){
     int data[3] = {0,0,0};
@@ -123,47 +101,48 @@ void beginFilters(){
 void setup(){
   Serial.begin(57600);
   while(!Serial);
-  beginROSComm();
+  Wire.begin(false);
+  delay(2000);
+ /* pinMode(20, INPUT_PULLUP);
+  pinMode(21, INPUT_PULLUP);*/
+  out();
+  off();
+  on(10);
+  delay(20);
   beginLidars();
-  Controller.asyncAll();
-  beginFilters();
 }
 
 void loop(){
-  nh.spinOnce();
+  for(int i = 98; i < 120; i++){
+    Serial.print(i);
+    Serial.print(" : ");
+    Serial.println(I2C.isOnline(i));
+  }
   // Check reset lasers
   // Reset lasers
   //getData
-  Controller.checkAllToReset();
+ // Controller.checkAllToReset();
   //exportData();
   //laserAcquisition();
-  laserPublish();
- 
-  delay(5);
-  // Verify data
+  //laserPublish();
 }
 
-void laserPublish(){
-  static int16_t dataOut[6] = {0,0,0,0,0,0};
-  static uint8_t statusOut[6] = {0,0,0,0,0,0};
-  distance_msg.lasers_length = 6;
-  distance_msg.status_length = 6;
-  distance_msg.lasers = dataOut;
-  distance_msg.status = statusOut;
-  
-  for(byte i = 0; i < 4; i++){
-    int data = 0;
-    bool isItAnOutlier = false;
-    statusOut[i] = Controller.distanceAndAsync(i, &data);
-    dataOut[i] =  Controller.filters[i]->filter(data, &isItAnOutlier);
-    if(isItAnOutlier){
-      statusOut[i] = statusOut[i] | 0x80;
-    }
+
+void off(){
+  for(int i= 10; i<= 13; i++){
+    digitalWrite(i, LOW);
   }
- 
-  distpub.publish( &distance_msg );
 }
 
+void out(){
+  for(int i= 10; i<= 13; i++){
+    pinMode(i, OUTPUT);
+  }
+}
+
+void on(int data){
+  digitalWrite(data, HIGH);
+}
 void laserAcquisition(){
   for(byte i = 0; i < NUMBER_OF_LASERS; i++){
     int data = 0;

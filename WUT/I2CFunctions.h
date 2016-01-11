@@ -4,7 +4,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 
-#define STOP_CONDITION_I2C true
+#define STOP_CONDITION_I2C false
 class I2CFunctions {
   public:
   	I2CFunctions() {};
@@ -33,7 +33,7 @@ class I2CFunctions {
 *******************************************************************************/
     bool isOnline(byte Device = 0x62){
       Wire.beginTransmission(Device);
-      if(Wire.endTransmission(STOP_CONDITION_I2C))
+      if(Wire.endTransmission())
         return false;
       return true;
     };
@@ -117,16 +117,16 @@ class I2CFunctions {
       Serial.println("Scanning...");
 
       nDevices = 0;
-      for(address = 1; address < 127; address++ ) {
-        Wire.beginTransmission(address);
-        error = Wire.endTransmission(STOP_CONDITION_I2C);
-        if (error == 0) {
+      for(address = 62; address < 127; address++ ) {
+        if (isOnline(address)) {
           Serial.print("I2C device found at address 0x");
+          Serial.print((isOnline(address)));
           if (address<16)
             Serial.print("0");
           Serial.print(address,HEX);
           Serial.println("  !");
           nDevices++;
+          delay(1);
         }
         else if (error==4) {
           Serial.print("Unknow error at address 0x");

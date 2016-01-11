@@ -90,12 +90,15 @@ returns 0 if success
 *******************************************************************************/
     byte changeAddress(byte Lidar){
       byte _lidar_new = lidars[Lidar]->address;
-      // Return 6 = The device do not respond
+      Serial.print("\t");
+      Serial.print(_lidar_new, HEX);
+      Serial.print("\t");
+      /*// Return 6 = The device do not respond
       if(!I2C.isOnline(0x62))
         return 6;
       // Return 5 = We already got an I2C device at this place
       if(I2C.isOnline(_lidar_new))
-        return 5;
+        return 5;*/
       /* Serial number part */
       unsigned char serialNumber[2];
       I2C.readWord(0x62, 0x96, serialNumber);
@@ -129,18 +132,20 @@ returns 0 if success
       // Shutdown them all
       for(int i = 0; i < count; i++){
         pinMode(lidars[i]->EnablePin, OUTPUT);
-        delay(20);
         lidars[i]->off();
-        delay(20);
       }
       // Power on them one per one,
       // Change their address & configure them
       for(int i = 0; i < count; i++){
         lidars[i]->on();
         delay(40);
-        changeAddress(i);
+        Serial.print(i);
+        Serial.print(":");
+        Serial.print(changeAddress(i));
+        Serial.print("\t");
         delay(20);
         configure(lidars[i]->configuration, lidars[i]->address);
+        delay(10);
       }
     }
 
