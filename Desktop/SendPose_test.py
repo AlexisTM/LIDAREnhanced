@@ -6,7 +6,7 @@ import rospy
 import mavros
 from getch import *
 from setpoint import *
-#from geometry_msgs.msg import  PoseStamped
+from geometry_msgs.msg import PoseStamped
 
 
 

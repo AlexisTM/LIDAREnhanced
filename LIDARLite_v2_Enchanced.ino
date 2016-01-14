@@ -137,8 +137,8 @@ void loop(){
   Controller.checkAllToReset();
   //exportData();
   //laserAcquisition();
-  laserPublish();
- 
+  //laserPublish();
+  outputASCII();
   delay(5);
   // Verify data
 }
@@ -202,7 +202,9 @@ void outputASCII(){
   for(byte i = 0; i < 4; i++){
     if(i != 0)
       Serial.print(",");
-    Serial.print(Controller.distanceAndAsync(i, &data));
+    int data = 0;
+    Controller.distanceAndAsync(i, &data);
+    Serial.print(data);
   }
   Serial.print("\n");
 }

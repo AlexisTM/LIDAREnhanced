@@ -11,7 +11,7 @@ from setpoint import *
 
 
 
-
+# local_position', 'pose' = Position drone que lui pense
 def SendPose():
     pub = rospy.Publisher('/mavros/mocap/pose',PoseStamped, queue_size=100)
     rospy.init_node('SendPose')
