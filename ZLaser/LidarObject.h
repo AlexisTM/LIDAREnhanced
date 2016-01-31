@@ -7,14 +7,12 @@
 #define LIDAR_OBJECT_H
 
 enum LIDAR_STATE {
-  UNKNOWN,            // Need to be resetted
   NEED_CONFIGURE,     // 15ms passed, we now configure the Lidar
-  CONFIGURED,          // We configured the laser
   ACQUISITION_READY, // I started an acquisition, need someone to read it
+  ACQUISITION_PENDING,
   ACQUISITION_DONE,  // I read the data, need to start an acq again
   NEED_RESET,        // Too much outliers, need to reset
-  WAIT_AFTER_RESET,  // Wait 15ms after you reset the Lidar, we are waiting in this state
-  WAIT_AFTER_RESET_DONE
+  RESET_PENDING  // Wait 15ms after you reset the Lidar, we are waiting in this state
 };
 
 class LidarObject {
@@ -31,7 +29,7 @@ class LidarObject {
     void begin(byte _EnablePin = 2, byte _ModePin = 1, byte _Lidar = 0x62, byte _configuration = 2,char _name = 'A'){
       configuration = _configuration;
       address = _Lidar;
-      lidar_state = UNKNOWN;
+      lidar_state = NEED_RESET;
       EnablePin = _EnablePin;
       ModePin = _ModePin;
       name = _name;
@@ -89,21 +87,21 @@ class LidarObject {
     }
 
     bool check_timer(){
-      if(lidar_state == WAIT_AFTER_RESET_DONE)
+      if(lidar_state != RESET_PENDING)
         return true;
-      if(lidar_state == WAIT_AFTER_RESET){
-        if(micros() - timeReset > 16000) {
-          lidar_state = WAIT_AFTER_RESET_DONE;
-          return true;
+
+      if(micros() - timeReset > 16000) {
+          // 16µS later
+           return true;
+        } else {
+          return false;
         }
-      }
-      return false;
     }
 
-    long timeReset = 0;
+    unsigned long timeReset = 0;
     byte configuration = 2;
     byte address = 0x62;
-    LIDAR_STATE lidar_state = UNKNOWN;
+    LIDAR_STATE lidar_state = NEED_RESET;
     byte EnablePin = 2;
     byte ModePin = 1;
     char name;

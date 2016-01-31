@@ -209,8 +209,5 @@ void outputASCII(){
   Serial.print("\n");
 }
 
-void resetLasers(){
-  
-}
 
 
