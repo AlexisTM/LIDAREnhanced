@@ -29,7 +29,7 @@ class LidarObject {
     void begin(byte _EnablePin = 2, byte _ModePin = 1, byte _Lidar = 0x62, byte _configuration = 2,char _name = 'A'){
       configuration = _configuration;
       address = _Lidar;
-      lidar_state = NEED_CONFIGURE;
+      lidar_state = NEED_RESET;
       EnablePin = _EnablePin;
       ModePin = _ModePin;
       name = _name;
@@ -101,7 +101,7 @@ class LidarObject {
     unsigned long timeReset = 0;
     byte configuration = 2;
     byte address = 0x62;
-    LIDAR_STATE lidar_state = NEED_CONFIGURE;
+    LIDAR_STATE lidar_state = NEED_RESET;
     byte EnablePin = 2;
     byte ModePin = 1;
     char name;
