@@ -44,7 +44,7 @@
 // Wait at least 5 bits to wait for slave answer
 #define I2C_WAIT                  50
 
-#define PRINT_DEBUG_INFO          true
+#define PRINT_DEBUG_INFO          false
 #define LIDAR_TIMEOUT_MS          20
 #define MAX_LIDARS                8
 #define MAX_NACKS                 10
@@ -325,7 +325,10 @@ class LidarController {
             if (bitRead( status(i), 0) == 0) {
               int data = 0;
               distance(i, &data);
-              Serial.println(data);
+#if PRINT_DEBUG_INFO
+              Serial.println(i);
+#endif
+
               distances[i] = data;
               setState(i, ACQUISITION_READY);
             }

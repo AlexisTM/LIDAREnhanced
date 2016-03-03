@@ -3,7 +3,7 @@
 #include "I2CFunctions.h"
 
 #include <Wire.h>
-#define WIRE400K false
+#define WIRE400K true
 /*** Defines : CONFIGURATION ***/
 // Defines laser ready data
 #define Z1_LASER_PIN 10
@@ -21,10 +21,18 @@
 
 #define READINESS true
 
+// Maximum datarate
+#define DATARATE 100
+// Actual wait between communications 100Hz = 10ms
+#define DELAY_SEND_MICROS 1000000/DATARATE
+
 // Lidars
 static LidarController Controller;
 static LidarObject LZ1;
 static LidarObject LZ2;
+
+// Delays
+long now, last;
 
 void beginLidars() {
   // Initialisation of the lidars objects
@@ -41,9 +49,15 @@ void setup() {
   Serial.begin(57600);
   while (!Serial);
   beginLidars();
-  I2C.scan();
+  last = micros();
 }
 
 void loop() {
   Controller.spinOnce();
+  now = micros();
+  if(now - last > DELAY_SEND_MICROS){
+    last = micros();
+    Serial.println(Controller.distances[0]);
+    Serial.println(Controller.distances[1]);
+  } 
 }
