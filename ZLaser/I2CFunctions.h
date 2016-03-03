@@ -150,7 +150,7 @@ class I2CFunctions {
 *******************************************************************************/
     byte nackError(byte error) {
       if (error) {
-        Serial.println("NackError");
+        Serial.print("NackError : ");
         switch (error) {
           case 1:
             Serial.println("Message is too long in transmit buffer");
@@ -164,6 +164,8 @@ class I2CFunctions {
           case 4:
             Serial.println("Other error");
             break;
+          default:
+            Serial.println("No Error");
         }
       }
       return error;

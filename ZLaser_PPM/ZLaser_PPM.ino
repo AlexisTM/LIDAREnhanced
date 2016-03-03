@@ -38,7 +38,7 @@ void beginLidars() {
 }
 
 void setup() {
-  Serial.begin(57600);
+  Serial.begin(230400);
   while (!Serial);
   beginLidars();
   I2C.scan();

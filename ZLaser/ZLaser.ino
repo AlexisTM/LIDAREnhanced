@@ -3,7 +3,7 @@
 #include "I2CFunctions.h"
 
 #include <Wire.h>
-#define WIRE400K true
+#define WIRE400K false
 /*** Defines : CONFIGURATION ***/
 // Defines laser ready data
 #define Z1_LASER_PIN 10
@@ -32,14 +32,16 @@ void beginLidars() {
   LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, 'Z');
   // Initialisation of the controller
   Controller.begin(WIRE400K);
+  delay(10);
   Controller.add(&LZ1, 0);
   Controller.add(&LZ2, 1);
 }
 
 void setup() {
-  Serial.begin(230400);
+  Serial.begin(57600);
   while (!Serial);
   beginLidars();
+  I2C.scan();
 }
 
 void loop() {

@@ -47,6 +47,7 @@
 #define PRINT_DEBUG_INFO          true
 #define LIDAR_TIMEOUT_MS          20
 #define MAX_LIDARS                8
+#define MAX_NACKS                 10
 
 class LidarController {
   public:
@@ -89,24 +90,26 @@ class LidarController {
       Lidar : Address of the Lidar (0x62 by default)
     *******************************************************************************/
     void configure(byte Lidar = 0, byte configuration = 2) {
+      byte nack = 0;
       switch (configuration) {
         case 0: //  Default configuration
-          I2C.write(lidars[Lidar]->address, 0x00, 0x00);
+          nack = I2C.write(lidars[Lidar]->address, 0x00, 0x00);
           break;
         case 1: //  Set aquisition count to 1/3 default value, faster reads, slightly
           //  noisier values
-          I2C.write(lidars[Lidar]->address, 0x04, 0x00);
+          nack = I2C.write(lidars[Lidar]->address, 0x04, 0x00);
           break;
         case 2: //  Low noise, low sensitivity: Pulls decision criteria higher
           //  above the noise, allows fewer false detections, reduces
           //  sensitivity
-          I2C.write(lidars[Lidar]->address, 0x1c, 0x20);
+          nack = I2C.write(lidars[Lidar]->address, 0x1c, 0x20);
           break;
         case 3: //  High noise, high sensitivity: Pulls decision criteria into the
           //  noise, allows more false detections, increses sensitivity
-          I2C.write(lidars[Lidar]->address, 0x1c, 0x60);
+          nack = I2C.write(lidars[Lidar]->address, 0x1c, 0x60);
           break;
       }
+      nackIncrement(Lidar, nack);
     };
 
     /*******************************************************************************
@@ -122,28 +125,33 @@ class LidarController {
     *******************************************************************************/
     byte changeAddress(byte Lidar) {
       byte _lidar_new = lidars[Lidar]->address;
+      byte nack = 0;
       // Return 6 = The device do not respond
-      if (!I2C.isOnline(0x62))
+      if (!I2C.isOnline(0x62)){
+        nackIncrement(Lidar, 1); // If we set anything else than 0, it increments
         return 6;
+      }
       // Return 5 = We already got an I2C device at this place
-      if (I2C.isOnline(_lidar_new))
+      if (I2C.isOnline(_lidar_new)){
+        nackIncrement(Lidar, 1);
         return 5;
+      }
       /* Serial number part */
       unsigned char serialNumber[2];
-      I2C.readWord(0x62, 0x96, serialNumber);
+      nackIncrement(Lidar, I2C.readWord(0x62, 0x96, serialNumber));
       // Return 1 = Error sending the Serial (byte 1)
-      if (I2C.nackError(I2C.write(0x62, 0x18, serialNumber[0])))
+      if (nackIncrement(Lidar, I2C.write(0x62, 0x18, serialNumber[0])))
         return 1;
       // Return 2 = Error sending the Serial (byte 2)
-      if (I2C.nackError(I2C.write(0x62, 0x19, serialNumber[1])))
+      if (nackIncrement(Lidar, I2C.write(0x62, 0x19, serialNumber[1])))
         return 2;
 
       // Return 3 = Error sending the Lidar address
-      if (I2C.nackError(I2C.write(0x62, 0x1a, _lidar_new)))
+      if (nackIncrement(Lidar, I2C.write(0x62, 0x1a, _lidar_new)))
         return 3;
 
       // Return 4 = Error disabling the Lidar Main address (0x62)
-      if (I2C.nackError(I2C.write(0x62, 0x1e, 0x08)))
+      if (nackIncrement(Lidar, I2C.write(0x62, 0x1e, 0x08)))
         return 4;
 
       return 0;
@@ -157,7 +165,8 @@ class LidarController {
     byte status(byte Lidar = 0) {
       byte data[1] = {171}; // Initializing with a non 0 NOR 1 data to ensure we got 
       // no interference
-      I2C.readByte(lidars[Lidar]->address, 0x01, data);
+      byte nack = I2C.readByte(lidars[Lidar]->address, 0x01, data);
+      nackIncrement(Lidar, nack);
       return data[0];
     };
 
@@ -169,7 +178,8 @@ class LidarController {
       returns the nack error (0 if no error)
     *******************************************************************************/
     byte async(byte Lidar = 0) {
-      I2C.write(lidars[Lidar]->address, 0x00, 0x04);
+      byte nack = I2C.write(lidars[Lidar]->address, 0x00, 0x04);
+      nackIncrement(Lidar, nack);
     };
 
     /*******************************************************************************
@@ -179,6 +189,7 @@ class LidarController {
     int distance(byte Lidar, int * data) {
       byte distanceArray[2];
       byte nackCatcher = I2C.readWord(lidars[Lidar]->address, 0x8f, distanceArray);
+      nackIncrement(Lidar, nackCatcher);
       int distance = (distanceArray[0] << 8) + distanceArray[1];
       *data = distance;
       return nackCatcher;
@@ -245,6 +256,29 @@ class LidarController {
       resetOngoing = false;
     };
 
+
+    /*******************************************************************************
+      incrementNackCount : increments the nacksCount if nack happens
+    *******************************************************************************/
+    byte nackIncrement(byte Lidar = 0, byte nack = 0){
+      if(nack)
+        lidars[Lidar]->nacksCount += 1;
+      return nack;
+    };
+
+    /*******************************************************************************
+      checkNacks : Returns if the laser needs or not a reset
+        if have to be resetted, reset the counter and return true. The setState 
+        instruction have to be in the spinOnce function
+    *******************************************************************************/
+    bool checkNacks(byte Lidar = 0){
+      if(lidars[Lidar]->nacksCount > MAX_NACKS){
+        lidars[Lidar]->resetNacksCount();
+        return true;
+      }
+      return false;
+    };
+
     /*******************************************************************************
       spinOnce : Main routine to simplify everything in ASYNC mode, checking the 
       status of the Lidar for each loop. 
@@ -262,10 +296,12 @@ class LidarController {
           ready. No other laser can be on at this time
     *******************************************************************************/
     void spinOnce() {
-      // Handle everything
+      // Handling routine
       for (int8_t i = count - 1; i >= 0; i--) {
+#if PRINT_DEBUG_INFO
         Serial.print("Laser ");
         Serial.print(i);  
+#endif
         switch (getState(i)) {
           case NEED_CONFIGURE:
 #if PRINT_DEBUG_INFO
@@ -279,25 +315,20 @@ class LidarController {
             Serial.println(" ACQUISITION_READY");
 #endif
             async(i);
-            Serial.print("isOnline :");
-            Serial.println(I2C.isOnline(i));
-            
             setState(i, ACQUISITION_PENDING);
             break;
           case ACQUISITION_PENDING:
 #if PRINT_DEBUG_INFO
             Serial.println(" ACQUISITION_PENDING");
 #endif
-            // Get the status bit, if 0 => Acquisition is done            
+            // Get the status bit, if 0 => Acquisition is done     
             if (bitRead( status(i), 0) == 0) {
               int data = 0;
-              distanceAndAsync(i, &data);
+              distance(i, &data);
               Serial.println(data);
-          
               distances[i] = data;
               setState(i, ACQUISITION_READY);
             }
-
             break;
           case ACQUISITION_DONE:
 
@@ -307,7 +338,6 @@ class LidarController {
 
             break;
           case NEED_RESET:
-
 #if PRINT_DEBUG_INFO
             Serial.println(" NEED_RESET");
 #endif
@@ -317,7 +347,6 @@ class LidarController {
             }
             break;
           case RESET_PENDING:
-
 #if PRINT_DEBUG_INFO
             Serial.println(" RESET_PENDING");
 #endif
@@ -329,25 +358,14 @@ class LidarController {
             break;
           default:
             break;
+        } // End switch case
+
+        if(checkNacks(i)){
+           setState(i, NEED_RESET);
         }
-      }
+        
+      } // End for each laser
     };
-    /*******************************************************************************
-      nextToReset : Middleware to know when we should reset the laser, for example 
-                    * When we got too much time since the last acquisition (10-20 mS)
-                    * When we got "5" distance readings, usually a bug
-                    * When we got too much spin since the last acquisition
-
-      NOTE USED / IMPLEMENTED
-
-    *******************************************************************************/
-    int nextToReset() {
-      for (int8_t i = count - 1; i >= 0; i--) {
-        if (getState(i) == NEED_RESET)
-          return i;
-      }
-      return -1;
-    }
 
     int distances[MAX_LIDARS];
   private:

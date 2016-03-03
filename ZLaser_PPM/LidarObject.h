@@ -81,20 +81,11 @@ class LidarObject {
     void disable(){
       digitalWrite(ModePin, LOW);
     };
-
-/*******************************************************************************
-  timer_update : Update the timer to the current time to start the timer.
-*******************************************************************************/
+    
     void timer_update(){
       timeReset = micros();
     }
 
-
-/*******************************************************************************
-  check_timer : Check the reset timer to see if the laser is correctly resetted
-
-  The laser takes 20ms to reset
-*******************************************************************************/
     bool check_timer(){
       if(lidar_state != RESET_PENDING)
         return true;
@@ -107,16 +98,6 @@ class LidarObject {
         }
     }
 
-/*******************************************************************************
-  resetNacksCount : The nack counter makes the Arduino able to know if a laser 
-  needs to be resetted
-*******************************************************************************/
-    bool resetNacksCount(){
-      nacksCount = 0;
-    }
-
-    
-    byte nacksCount = 0;
     unsigned long timeReset = 0;
     byte configuration = 2;
     byte address = 0x62;
