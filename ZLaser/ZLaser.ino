@@ -57,7 +57,14 @@ void loop() {
   now = micros();
   if(now - last > DELAY_SEND_MICROS){
     last = micros();
-    Serial.println(Controller.distances[0]);
+    
+    Serial.print("distances: ");
+    Serial.print(Controller.distances[0]);
+    Serial.print(" - ");
     Serial.println(Controller.distances[1]);
+    Serial.print("statuses: ");
+    Serial.print(Controller.statuses[0]);
+    Serial.print(" - ");
+    Serial.println(Controller.statuses[1]);
   } 
 }

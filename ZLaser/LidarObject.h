@@ -7,12 +7,12 @@
 #define LIDAR_OBJECT_H
 
 enum LIDAR_STATE {
-  NEED_CONFIGURE,     // 15ms passed, we now configure the Lidar
-  ACQUISITION_READY, // I started an acquisition, need someone to read it
-  ACQUISITION_PENDING,
-  ACQUISITION_DONE,  // I read the data, need to start an acq again
-  NEED_RESET,        // Too much outliers, need to reset
-  RESET_PENDING  // Wait 15ms after you reset the Lidar, we are waiting in this state
+  NEED_RESET = 48,        // Too much outliers, need to reset
+  RESET_PENDING = 80,  // Wait 15ms after you reset the Lidar, we are waiting in this state
+  NEED_CONFIGURE = 144,     // 15ms passed, we now configure the Lidar
+  ACQUISITION_READY = 32, // I started an acquisition, need someone to read it
+  ACQUISITION_PENDING = 64,
+  ACQUISITION_DONE = 128  // I read the data, need to start an acq again
 };
 
 class LidarObject {
