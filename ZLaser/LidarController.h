@@ -327,15 +327,16 @@ class LidarController {
             if (bitRead( status(i), 0) == 0) {
               int data = 0;
               distance(i, &data);
-//#if PRINT_DEBUG_INFO
+#if PRINT_DEBUG_INFO
               Serial.println(i);
               Serial.println(data);
-              if(data < 10 or data > 1000)
+#endif
+              if(data < 10 or data > 1000){
                 shouldIncrementNack(i, 1);
-//#endif
-              
-              distances[i] = data;
-              
+                nacks[i] = 15; // 0b00001111
+              } else {
+                distances[i] = data;
+              }
               setState(i, ACQUISITION_READY);
             }
             break;
@@ -372,7 +373,7 @@ class LidarController {
         if(checkNacks(i)){
            setState(i, NEED_RESET);
         }
-        statuses[i] = nacks[i] | getState(i);
+        statuses[i] = (getState(i) & 0xF0) | (nacks[i] & 0x0F);
       } // End for each laser
     };
 
