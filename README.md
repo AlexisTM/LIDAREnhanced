@@ -28,14 +28,14 @@ Usage
 The lidar object represents a laser.
 
 #### LidarObject::begin
-```
+```C++
 void LidarObject.begin(EnablePin, ModePin, Address, LaserConfiguration, OneCharName);
 LZ1.begin(12, 13, 0x64, 2, 'x');
 ```
 
 #### LIDAR_STATE enum
 
-```
+```C++
 enum LIDAR_STATE {
   SHUTING_DOWN = 240,       // Shutdown the laser to reset it
   NEED_RESET = 48,          // Too much outliers, need to reset
@@ -51,14 +51,14 @@ enum LIDAR_STATE {
 
 #### LidarController::begin
 Start the I2C line with or without fasti2c (400kHz)
-```
+```C++
 void begin(bool fasti2c = false);
 ```
 
 #### LidarController::add
 Add a lidar to the controller, if the id is over the maximum number of lidar (8 by default), returns false and do not add the lidar.
 
-```
+```C++
 bool add(LidarObject* _Lidar, byte _id);
 ```
 
@@ -68,7 +68,7 @@ Make a new step in the Lidar State Machine, store results to *int LidarControlle
 
 The functions below are NOT needed if you do not want to use the state machine
 
-```
+```C++
 void spinOnce();
 ```
 
@@ -80,14 +80,14 @@ Send the Lidar configuration to the Lidar (id of the lidar)
   - 2 = low noise, low sensitivity, less false detection (Default)
   - 3 = High noise, high sensitivity
 
-```
+```C++
 configure(byte Lidar = 0, byte configuration = 2);
 ```
 
 #### LidarController::changeAddress
 
 Change the address of the Lidar to the address configured in the object
-```
+```C++
 changeAddress(byte Lidar);
 ```
 
@@ -95,14 +95,14 @@ changeAddress(byte Lidar);
 
 Returns the status byte of the Lidar (id)
 
-```
+```C++
 byte status(byte Lidar = 0);
 ```
 #### LidarController::async
 
 Send the command to the lidar (id) to start an acquisition
 
-```
+```C++
 byte async(byte Lidar = 0);
 ```
 
@@ -112,7 +112,7 @@ Read the distance from the Lidar (id)
 
 NOTE : You have to send the command async FIRST and should check if the data is there. You can know it by reading the bit 0 from the status of the lidar (LidarController::status)
 
-```
+```C++
 int distance(byte Lidar, int * data);
 ```
 
@@ -120,7 +120,7 @@ int distance(byte Lidar, int * data);
 
 Read the distance from the Lidar (id) and restart an acquisition, writes to data and returns nack status
 
-```
+```C++
 byte distanceAndAsync(byte Lidar, int * data);
 ```
 
@@ -128,7 +128,7 @@ byte distanceAndAsync(byte Lidar, int * data);
 
 Reset a Lidar
 
-```
+```C++
 void resetLidar(byte Lidar = 0)
 ```
 
@@ -137,31 +137,31 @@ void resetLidar(byte Lidar = 0)
 
 #### I2C::begin
 Start the I2C line
-```
+```C++
 void I2C.begin(fasti2c = false);
 ```
 
 #### I2C::isOnline
 Check if the device/laser is online 
-```
+```C++
 void I2C.isOnline(Device = 0x62);
 ```
 
 #### I2C::write
 Write data though I2C to a device
-```
+```C++
 byte write(byte Device, byte regAdr, byte data);
 ```
 
 #### I2C::readByte 
 Read one byte from an I2C device, stored in data, returns NACK status
-```
+```C++
 byte readByte(byte Device, byte regAdr, byte * data)
 ```
 
 #### I2C::readWord
 Read *two* byte from an I2C device, stored in data, returns NACK status
-```
+```C++
 byte readWord(byte Device, byte regAdr, byte * data)
 ```
 
