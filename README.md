@@ -1,4 +1,4 @@
-LIDAR Lite v2 ENCHANCED
+LIDAR Lite v2 ENHANCED
 =========================
 
 Introduction
