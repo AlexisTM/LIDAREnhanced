@@ -7,12 +7,13 @@
 #define LIDAR_OBJECT_H
 
 enum LIDAR_STATE {
-  NEED_CONFIGURE,     // 15ms passed, we now configure the Lidar
-  ACQUISITION_READY, // I started an acquisition, need someone to read it
-  ACQUISITION_PENDING,
-  ACQUISITION_DONE,  // I read the data, need to start an acq again
-  NEED_RESET,        // Too much outliers, need to reset
-  RESET_PENDING  // Wait 15ms after you reset the Lidar, we are waiting in this state
+  SHUTING_DOWN = 240,       // Shutdown the laser to reset it
+  NEED_RESET = 48,          // Too much outliers, need to reset
+  RESET_PENDING = 80,       // Wait 15ms after you reset the Lidar, we are waiting in this state
+  NEED_CONFIGURE = 144,     // 15ms passed, we now configure the Lidar
+  ACQUISITION_READY = 32,   // I started an acquisition, need someone to read it
+  ACQUISITION_PENDING = 64, // The acquisition in on progress
+  ACQUISITION_DONE = 128    // I read the data, need to start an acq again
 };
 
 class LidarObject {
@@ -27,6 +28,7 @@ class LidarObject {
   If fasti2c is true, use 400kHz I2C
 *******************************************************************************/
     void begin(byte _EnablePin = 2, byte _ModePin = 1, byte _Lidar = 0x62, byte _configuration = 2,char _name = 'A'){
+      pinMode(_EnablePin, OUTPUT);
       configuration = _configuration;
       address = _Lidar;
       lidar_state = NEED_RESET;
@@ -91,6 +93,19 @@ class LidarObject {
 
 
 /*******************************************************************************
+  reset_chack : Check the reset timer to see if the laser is correctly resetted
+
+  The laser takes 20ms to reset
+*******************************************************************************/
+    bool check_reset(){
+      if(lidar_state != NEED_RESET)
+        return true;
+
+      return (micros() - timeReset > 20000);
+    }
+
+
+/*******************************************************************************
   check_timer : Check the reset timer to see if the laser is correctly resetted
 
   The laser takes 20ms to reset
@@ -99,12 +114,7 @@ class LidarObject {
       if(lidar_state != RESET_PENDING)
         return true;
 
-      if(micros() - timeReset > 20000) {
-          // 16µS later
-           return true;
-        } else {
-          return false;
-        }
+      return (micros() - timeReset > 20000);
     }
 
 /*******************************************************************************
