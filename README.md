@@ -1,9 +1,9 @@
-LIDAR Lite v2 ENHANCED
+LIDAR Lite v3 ENHANCED
 =========================
 
 Introduction
 --------------
-This library tends to improve the efficiency of the acquisition of LidarLite v2 lasers.
+This library tends to improve the efficiency of the acquisition of LidarLite v2 (deprecated) and LidarLite v3 (release from Garmin) lasermeter.
 
 Improvements over the original library
 --------------------
