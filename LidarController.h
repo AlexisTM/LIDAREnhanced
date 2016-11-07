@@ -16,7 +16,7 @@
 // READ Registers
 // Those are registers we only READ from
 #define STATUS_REGISTER           0x01
-#define SIGNAL_STRENGH_REGISTER   0x0e
+#define SIGNAL_STRENGTH_REGISTER   0x0e
 #define ERROR_REGISTER            0x40
 #define MEASURED_VALUE_REGISTER   0x8f
 #define READ_SERIAL_REGISTERS     0x96
@@ -205,6 +205,16 @@ class LidarController {
     };
 
     /*******************************************************************************
+      signalStrength :
+        - Read the signal strength of the last reading
+    *******************************************************************************/
+    int signalStrength(byte Lidar, byte * signalStrengthArray) {
+      byte nack = I2C.readByte(lidars[Lidar]->address, SIGNAL_STRENGTH_REGISTER, signalStrengthArray);
+      shouldIncrementNack(Lidar, nack);
+      return nack;
+    };
+
+    /*******************************************************************************
       setState : Change the status of the Lidar Object
     *******************************************************************************/
     void setState(byte Lidar = 0, LIDAR_STATE _lidar_state = NEED_RESET) {
@@ -331,6 +341,7 @@ class LidarController {
         Serial.print("Laser ");
         Serial.print(i);
 #endif
+        byte strength = 0;
         switch (getState(i)) {
           case NEED_CONFIGURE:
 #if PRINT_DEBUG_INFO
@@ -373,10 +384,12 @@ class LidarController {
 #if PRINT_DEBUG_INFO
             Serial.println(" ACQUISITION_DONE");
 #endif
+              signalStrength(i, &strength);
+              signal_strengths[i] = strength;
 #if FORCE_RESET_OFFSET
               setOffset(i, 0x00);
-              setState(i, ACQUISITION_READY);
 #endif
+              setState(i, ACQUISITION_READY);
             break;
           case NEED_RESET:
 #if PRINT_DEBUG_INFO
@@ -419,6 +432,7 @@ class LidarController {
 
     int distances[MAX_LIDARS];
     int nacks[MAX_LIDARS];
+    byte signal_strengths[MAX_LIDARS];
     uint8_t statuses[MAX_LIDARS];
   private:
     bool resetOngoing = false;
