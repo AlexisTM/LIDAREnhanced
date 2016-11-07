@@ -28,6 +28,6 @@
 *.app
 
 # Dev lib
-example\SignalPower\I2CFunctions.h
-example\SignalPower\LidarController.h
-example\SignalPower\LidarObject.h
+example/SignalPower/I2CFunctions.h
+example/SignalPower/LidarController.h
+example/SignalPower/LidarObject.h
