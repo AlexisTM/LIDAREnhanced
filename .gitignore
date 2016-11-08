@@ -31,3 +31,6 @@
 example/SignalPower/I2CFunctions.h
 example/SignalPower/LidarController.h
 example/SignalPower/LidarObject.h
+example/Velocity/I2CFunctions.h
+example/Velocity/LidarController.h
+example/Velocity/LidarObject.h
