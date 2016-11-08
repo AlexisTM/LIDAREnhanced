@@ -16,7 +16,7 @@
 // READ Registers
 // Those are registers we only READ from
 #define STATUS_REGISTER           0x01
-#define SIGNAL_STRENGTH_REGISTER   0x0e
+#define SIGNAL_STRENGTH_REGISTER  0x0e
 #define ERROR_REGISTER            0x40
 #define MEASURED_VALUE_REGISTER   0x8f
 #define READ_SERIAL_REGISTERS     0x96
@@ -30,12 +30,14 @@
 #define PARTY_LINE_REGISTER       0x1e
 #define COMMAND_REGISTER          0x40
 #define SCALE_VELOCITY_REGISTER   0x45
+#define VELOCITY_MODE_REGISTER    0x04
 #define OFFSET_REGISTER           0x13
 
 // Values
 #define INITIATE_VALUE            0x04
 #define PARTY_LINE_ON             0x00
 #define PARTY_LINE_OFF            0x08
+#define VELOCITY_MODE_DATA        0xa0
 
 // Busyflag from STATUS_REGISTER
 #define BUSYFLAG_READY_VALUE      0x00
@@ -102,7 +104,7 @@ class LidarController {
       byte nack = 0;
       switch (configuration) {
         case 0: //  Default configuration
-          nack = I2C.write(lidars[Lidar]->address, 0x00, 0x00);
+          nack = I2C.write(lidars[Lidar]->address, CONTROL_REGISTER, 0x00);
           break;
         case 1: //  Set aquisition count to 1/3 default value, faster reads, slightly
           //  noisier values
@@ -187,7 +189,7 @@ class LidarController {
       returns the nack error (0 if no error)
     *******************************************************************************/
     byte async(byte Lidar = 0) {
-      byte nack = I2C.write(lidars[Lidar]->address, 0x00, 0x04);
+      byte nack = I2C.write(lidars[Lidar]->address, CONTROL_REGISTER, 0x04);
       shouldIncrementNack(Lidar, nack);
     };
 
@@ -195,13 +197,51 @@ class LidarController {
       distance :
         - Read the measured value from data registers
     *******************************************************************************/
-    int distance(byte Lidar, int * data) {
+    byte distance(byte Lidar, int * data) {
       byte distanceArray[2];
-      byte nackCatcher = I2C.readWord(lidars[Lidar]->address, 0x8f, distanceArray);
+      byte nackCatcher = I2C.readWord(lidars[Lidar]->address, MEASURED_VALUE_REGISTER, distanceArray);
       shouldIncrementNack(Lidar, nackCatcher);
       int distance = (distanceArray[0] << 8) + distanceArray[1];
       *data = distance;
       return nackCatcher;
+    };
+
+    /*******************************************************************************
+      Velocity scaling :
+        - Scale the velocity measures
+
+        CAUTION, different than the Scale function from LidarLite (not 1,2,3,4 but 
+        the actual period measurment, Note the x2 between 100 and 0xC8 (200))
+
+        Measurement  | Velocity         | Register         
+        Period (ms)  | Scaling (m/sec)  | 045 Load Value   
+        :----------- | :--------------- | :--------------- 
+        100          | 0.10 m/s         | 0xC8 (default)   
+        40           | 0.25 m/s         | 0x50             
+        20           | 0.50 m/s         | 0x28             
+        10           | 1.00 m/s         | 0x14             
+    *******************************************************************************/
+    void scale(byte Lidar, byte velocityScaling){
+        I2C.write(lidars[Lidar]->address, SCALE_VELOCITY_REGISTER, velocityScaling);
+    };
+
+    /*******************************************************************************
+      Velocity  NOT WORKING (guess, since there is no wait) :
+        - Read the velocity
+
+        This has to be worked on, this is the original implementation without the 
+          blocking architecture
+    *******************************************************************************/
+    int velocity(byte Lidar, int * data) {
+      // Set in velocity mode
+      I2C.write(lidars[Lidar]->address, VELOCITY_MODE_REGISTER, VELOCITY_MODE_DATA);
+      //  Write 0x04 to register 0x00 to start getting distance readings
+      I2C.write(lidars[Lidar]->address, 0x00,0x04);
+
+      byte velocityArray[1];
+      byte nack = I2C.readByte(lidars[Lidar]->address, 0x09, velocityArray);
+
+      return((int)((char)velocityArray[0]));
     };
 
     /*******************************************************************************

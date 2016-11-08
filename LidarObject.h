@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <Wire.h>
 #include "I2CFunctions.h"
-// We got a Lidar per laser. 
+// We got a Lidar object per laser. 
 
 #ifndef LIDAR_OBJECT_H
 #define LIDAR_OBJECT_H
@@ -16,6 +16,13 @@ enum LIDAR_STATE {
   ACQUISITION_DONE = 128    // I read the data, need to start an acq again
 };
 
+enum LIDAR_MODE {
+  NONE = 0,
+  DISTANCE = 1,
+  VELOCITY = 2,
+  DISTANCE_AND_VELOCITY = 3
+}
+
 class LidarObject {
   public:
 /*******************************************************************************
@@ -27,8 +34,9 @@ class LidarObject {
 
   If fasti2c is true, use 400kHz I2C
 *******************************************************************************/
-    void begin(byte _EnablePin = 2, byte _ModePin = 1, byte _Lidar = 0x62, byte _configuration = 2,char _name = 'A'){
+    void begin(byte _EnablePin = 2, byte _ModePin = 1, byte _Lidar = 0x62, byte _configuration = 2,  LIDAR_MODE _mode = DISTANCE, char _name = 'A'){
       pinMode(_EnablePin, OUTPUT);
+      mode = DISTANCE;
       configuration = _configuration;
       address = _Lidar;
       lidar_state = NEED_RESET;
@@ -125,7 +133,7 @@ class LidarObject {
       nacksCount = 0;
     }
 
-    
+    LIDAR_MODE mode = DISTANCE;
     byte nacksCount = 0;
     unsigned long timeReset = 0;
     byte configuration = 2;
