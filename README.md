@@ -24,6 +24,71 @@ Limitations
 Usage 
 -------
 
+```c++
+#include "LidarObject.h"
+#include "LidarController.h"
+#include "I2CFunctions.h"
+
+#include <Wire.h>
+#define WIRE400K false
+
+
+#define Z1_LASER_TRIG 11
+#define Z1_LASER_EN 12
+#define Z1_LASER_PIN 13
+#define Z1_LASER_AD 0x6E
+
+#define DATARATE 100 
+// 100Hz
+#define DELAY_SEND_MICROS 1000000/DATARATE
+
+
+static LidarController Controller;
+static LidarObject LZ1;
+
+
+// Delays
+long now, last;
+
+void initLidars() {
+  // Initialisation of the lidars objects
+  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, 'a');
+  
+  // Initialisation of the controller
+  Controller.begin(WIRE400K);
+  delay(100);
+  Controller.add(&LZ1, 0);
+}
+
+void setup() {
+  Serial.begin(57600);
+  while (!Serial); // for compatibility
+  initLidars();
+  last = micros();
+}
+
+void loop() {
+  Controller.spinOnce();
+  now = micros();
+  if(now - last > DELAY_SEND_MICROS){
+    last = micros();
+    laserprint();
+  } 
+}
+
+void laserprint(){
+  Serial.print(" Measure: ");
+  Serial.print(Controller.distances[0]);
+  Serial.print(" Status: ");
+  Serial.println(Controller.statuses[0]);
+  Serial.print(" Signal Strenght: ");
+  Serial.println(Controller.signal_strenghts[0]);
+}
+```
+
+Code
+-------
+
 ### Lidar object
 The lidar object represents a laser.
 
