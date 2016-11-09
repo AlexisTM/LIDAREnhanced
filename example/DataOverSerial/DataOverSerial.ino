@@ -92,11 +92,17 @@ void loop() {
 }
 
 void laserprint(){
-  for(byte i = 0; i < 6; i++){
+// UNSAFE, as you could read out of the array.
+// You can also use LZ1.distance
+  for(byte i = 0; i < NUMBER_OF_LASERS; i++){
     Serial.print(i);
-    Serial.print(" - ");
-    Serial.print(Controller.distances[i]);
-    Serial.print(" - ");
-    Serial.println(Controller.statuses[i]);
+    Serial.print("\t");
+    Serial.print(Controller.lidars[i]->distance);
+    Serial.print("\t");
+    Serial.print(Controller.lidars[i]->velocity);
+    Serial.print("\t");
+    Serial.print(Controller.lidars[i]->strength);
+    Serial.print("\t");
   }
+  Serial.println("");
 }

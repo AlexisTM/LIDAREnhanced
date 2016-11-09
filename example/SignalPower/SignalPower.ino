@@ -83,11 +83,11 @@ void laserprint(){
   for(byte i = 0; i < NUMBER_OF_LASERS; i++){
     Serial.print(i);
     Serial.print("\t");
-    Serial.print(Controller.distances[i]);
+    Serial.print(Controller.lidars[i]->distance);
     Serial.print("\t");
-    Serial.print(Controller.statuses[i]);
+    Serial.print(Controller.lidars[i]->velocity);
     Serial.print("\t");
-    Serial.print(Controller.signal_strengths[i]);
+    Serial.print(Controller.lidars[i]->strength);
     Serial.print("\t");
   }
   Serial.println("");

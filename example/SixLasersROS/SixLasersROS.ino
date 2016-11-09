@@ -2,8 +2,7 @@
 #include "LidarController.h"
 #include "I2CFunctions.h"
 #include <ros.h>
-#include <laserpack/Distance.h>
-#include <laserpack/Req_reset.h>
+#include <flyingros_msgs/Distance.h>
 
 #include <Wire.h>
 #define WIRE400K false
@@ -46,9 +45,6 @@
 // Actual wait between communications 100Hz = 10ms
 #define DELAY_SEND_MICROS 1000000/DATARATE
 
-
-
-
 // Lidars
 static LidarController Controller;
 static LidarObject LZ1;
@@ -61,32 +57,20 @@ static LidarObject LZ6;
 // Delays
 long now, last;
 
-void handleReset(const laserpack::Req_reset& msg){
-  for(int i = msg.rst_length-1; i >= 0 ; i--){
-    if(msg.rst[i] < Controller.getCount()){
-      Controller.resetLidar(msg.rst[i]);
-    }
-  }
-}
-
-
-
 // ROS Communication
 ros::NodeHandle nh;
-laserpack::Distance distance_msg;
+flyingros_msgs::Distance distance_msg;
 
-ros::Publisher distance_publisher("lasers/raw", &distance_msg);
-ros::Subscriber<laserpack::Req_reset> laser_reset_subscriber("/lasers/reset", &handleReset );
-
+ros::Publisher distance_publisher("flyingros/lasers/raw", &distance_msg);
 
 void beginLidars() {
   // Initialisation of the lidars objects
-  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, DISTANCE, 'x');
-  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, DISTANCE, 'X');
-  LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_AD, 2, DISTANCE, 'y');
-  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_AD, 2, DISTANCE, 'Z');
-  LZ5.begin(Z5_LASER_EN, Z5_LASER_PIN, Z5_LASER_AD, 2, DISTANCE, 'y');
-  LZ6.begin(Z6_LASER_EN, Z6_LASER_PIN, Z6_LASER_AD, 2, DISTANCE, 'Z');
+  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, 'x');
+  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, 'X');
+  LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_AD, 2, 'y');
+  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_AD, 2, 'Z');
+  LZ5.begin(Z5_LASER_EN, Z5_LASER_PIN, Z5_LASER_AD, 2, 'y');
+  LZ6.begin(Z6_LASER_EN, Z6_LASER_PIN, Z6_LASER_AD, 2, 'Z');
   
   // Initialisation of the controller
   Controller.begin(WIRE400K);
@@ -106,7 +90,6 @@ void setup() {
   last = micros();
   nh.initNode();
   nh.advertise(distance_publisher);
-  nh.subscribe(laser_reset_subscriber);
 }
 
 void loop() {
@@ -124,17 +107,20 @@ void laserprint(){
   for(byte i = 0; i < 6; i++){
     Serial.print(i);
     Serial.print(" - ");
-    Serial.print(Controller.distances[i]);
+    Serial.print(Controller.lidars[i]->distance);
     Serial.print(" - ");
-    Serial.println(Controller.statuses[i]);
+    Serial.println(Controller.lidars[i]->strength);
   }
 }
 
 void laserpublish(){
   distance_msg.lasers_length = 6;
   distance_msg.status_length = 6;
-  distance_msg.lasers = Controller.distances;
-  distance_msg.status = Controller.statuses;
+
+  for(uint8_t i = 0; i < NUMBER_OF_LASERS; i++){
+    distance_msg.lasers[i] = Controller.lidars[i]->distance;
+    distance_msg.status[i] = Controller.lidars[i]->strength;
+  }
   
   distance_publisher.publish(&distance_msg);
 }

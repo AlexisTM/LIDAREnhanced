@@ -12,14 +12,14 @@ Improvements over the original library
 - *Automatic reset* of the lidars
 - *State machine* for each lidar
 - *Maximum speed* readings for many lidars (enable 400kHz I2C)
-- The whole library with Serial & Arduino firmware weight *7200 bytes* of the memory for 
+- The whole library with Serial & Arduino firmware weight *7200 uint8_ts* of the memory for 
  lasers
 
 Limitations
 -----------
-- Software limitation to 8 lasers, 8 lasers uses as much memory as for 1 laser
-- Cannot predict when you got a new data but a callback is easy to implement.
-- There is no velocity reading (nor scale configuration)
+- You have to edit the `MAX_LIDARS` in `LidarController.h` to set the number of instances of lidars you will use (default : 8)
+- Not yet callbacks (soon implemented)
+- There is not (yet) velocity reading, it will be implemented with software (to avoid the badly designed blocking architecture) 
 
 Usage 
 -------
@@ -30,16 +30,15 @@ Usage
 #include "I2CFunctions.h"
 
 #include <Wire.h>
+
 #define WIRE400K false
-
-
 #define Z1_LASER_TRIG 11
 #define Z1_LASER_EN 12
 #define Z1_LASER_PIN 13
 #define Z1_LASER_AD 0x6E
 
-#define DATARATE 100 
 // 100Hz
+#define DATARATE 100 
 #define DELAY_SEND_MICROS 1000000/DATARATE
 
 
@@ -78,24 +77,30 @@ void loop() {
 
 void laserprint(){
   Serial.print(" Measure: ");
-  Serial.print(Controller.distances[0]);
-  Serial.print(" Status: ");
-  Serial.println(Controller.statuses[0]);
-  Serial.print(" Signal Strenght: ");
-  Serial.println(Controller.signal_strenghts[0]);
+  Serial.print(LZ1.distance);
+  Serial.print(" Signal strength: ");
+  Serial.println(LZ1.strength);
+  Serial.print(" Velocity: ");
+  Serial.println(LZ1.velocity);
 }
 ```
 
-Code
+API
 -------
+
+Here is the API basis, you can check the [In-depth API](API_depth.md) to contribute.
 
 ### Lidar object
 The lidar object represents a laser.
 
 #### LidarObject::begin
+
 ```C++
-void LidarObject.begin(EnablePin, ModePin, Address, LaserConfiguration, OneCharName);
-LZ1.begin(12, 13, 0x64, 2, 'x');
+void LidarObject.begin(EnablePin, ModePin, I2CAddress, LaserConfiguration, LidarMode, OneCharName);
+
+// used as 
+static LidarObject LZ1;
+LZ1.begin(12, 13, 0x64, 2, DISTANCE, 'x');
 ```
 
 #### LIDAR_STATE enum
@@ -112,6 +117,26 @@ enum LIDAR_STATE {
 };
 ```
 
+#### LIDAR_MODE enum
+
+```C++
+enum LIDAR_MODE {
+  NONE = 0,                  // Should not be used unless you want to disable a connected laser (could be implemented)
+  DISTANCE = 1,              // Measure distance as fast as possible
+  VELOCITY = 2,              // Measure velocity at a certain rate
+  DISTANCE_AND_VELOCITY = 3  // Measure distance and velocity
+};
+```
+
+#### Data reading
+
+```C++ 
+    int distance;      // newest measure
+    int last_distance; // last measure
+    int velocity;       // newest velocity
+    uint8_t strength;   // newest signal strength
+```
+
 ### LidarController object
 
 #### LidarController::begin
@@ -124,7 +149,7 @@ void begin(bool fasti2c = false);
 Add a lidar to the controller, if the id is over the maximum number of lidar (8 by default), returns false and do not add the lidar.
 
 ```C++
-bool add(LidarObject* _Lidar, byte _id);
+bool add(LidarObject* _Lidar, uint8_t _id);
 ```
 
 #### LidarController::spinOnce
@@ -137,101 +162,18 @@ The functions below are NOT needed if you do not want to use the state machine
 void spinOnce();
 ```
 
-#### LidarController::configure
+#### LidarController::lasers
 
-Send the Lidar configuration to the Lidar (id of the lidar)
-  - 0 = basic configuration
-  - 1 = faster (Do not read 3 times), bit noisier
-  - 2 = low noise, low sensitivity, less false detection (Default)
-  - 3 = High noise, high sensitivity
+The lidars object is an array with the pointers to all the lasers. 
 
 ```C++
-configure(byte Lidar = 0, byte configuration = 2);
+LidarObjects lidars[MAX_LIDARS];
+
+// Can be used as 
+Serial.print(Controller.lidars[0]->distance);
 ```
 
-#### LidarController::changeAddress
-
-Change the address of the Lidar to the address configured in the object
-```C++
-changeAddress(byte Lidar);
-```
-
-#### LidarController::status
-
-Returns the status byte of the Lidar (id)
-
-```C++
-byte status(byte Lidar = 0);
-```
-#### LidarController::async
-
-Send the command to the lidar (id) to start an acquisition
-
-```C++
-byte async(byte Lidar = 0);
-```
-
-#### LidarController::distance
-
-Read the distance from the Lidar (id)
-
-NOTE : You have to send the command async FIRST and should check if the data is there. You can know it by reading the bit 0 from the status of the lidar (LidarController::status)
-
-```C++
-int distance(byte Lidar, int * data);
-```
-
-#### LidarController::distanceAndAsync
-
-Read the distance from the Lidar (id) and restart an acquisition, writes to data and returns nack status
-
-```C++
-byte distanceAndAsync(byte Lidar, int * data);
-```
-
-#### LidarController::resetLidar
-
-Reset a Lidar
-
-```C++
-void resetLidar(byte Lidar = 0)
-```
-
-
-### I2C object
-
-#### I2C::begin
-Start the I2C line
-```C++
-void I2C.begin(fasti2c = false);
-```
-
-#### I2C::isOnline
-Check if the device/laser is online 
-```C++
-void I2C.isOnline(Device = 0x62);
-```
-
-#### I2C::write
-Write data though I2C to a device
-```C++
-byte write(byte Device, byte regAdr, byte data);
-```
-
-#### I2C::readByte 
-Read one byte from an I2C device, stored in data, returns NACK status
-```C++
-byte readByte(byte Device, byte regAdr, byte * data)
-```
-
-#### I2C::readWord
-Read *two* byte from an I2C device, stored in data, returns NACK status
-```C++
-byte readWord(byte Device, byte regAdr, byte * data)
-```
-
-
-### Full example
+### Six lasers example
 
 ```C++
 #include "LidarObject.h"
@@ -328,12 +270,12 @@ void loop() {
 }
 
 void laserprint(){
-  for(byte i = 0; i < 6; i++){
+  for(uint8_t i = 0; i < 6; i++){
     Serial.print(i);
     Serial.print(" - ");
-    Serial.print(Controller.distances[i]);
+    Serial.print(Controller.lidars[i]->distance);
     Serial.print(" - ");
-    Serial.println(Controller.statuses[i]);
+    Serial.println(Controller.lidars[i]->strength);
   }
 }
 ```
@@ -446,12 +388,12 @@ void loop(){
 
 ```C++ 
 void laserprint(){
-  for(byte i = 0; i < 6; i++){
+  for(uint8_t i = 0; i < 6; i++){
     Serial.print(i);
     Serial.print(" - ");
-    Serial.print(Controller.distances[i]);
+    Serial.print(Controller.lidars[i]->distance);
     Serial.print(" - ");
-    Serial.println(Controller.statuses[i]);
+    Serial.println(Controller.lidars[i]->strength);
   }
 }
 ```
@@ -459,7 +401,6 @@ void laserprint(){
 
 Todo
 --------
-- Library configurations to avoid to open the library to use our personnal parameters
 - Velocity readings
 - Independant callbacks for each lasers or when each are done, or one single callback for every lasers
 
@@ -469,4 +410,4 @@ Pull requests are welcome :D
 
 Credits 
 ------
-Alexis Paques (alexis[dot]paques[at]gmail[dot]com)
+* Alexis Paques (alexis[dot]paques[at]gmail[dot]com)

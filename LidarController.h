@@ -60,11 +60,11 @@ class LidarController {
       Start the I2C line with the correct frequency
     *******************************************************************************/
     void begin(bool fasti2c = false) {
- 
       for(uint8_t i=0; i<MAX_LIDARS; i++){
-        distances[i] = 0;
-        nacks[i] = 0;
-        statuses[i]=0;
+        lidars[i]->last_distance = 0;
+        lidars[i]->distance = 0;
+        lidars[i]->velocity = 0;
+        lidars[i]->strength = 0;
       }
 
       Wire.begin();
@@ -207,41 +207,13 @@ class LidarController {
     };
 
     /*******************************************************************************
-      Velocity scaling :
-        - Scale the velocity measures
+      Velocity :
+        - Compute the velocity at certain rate
 
-        CAUTION, different than the Scale function from LidarLite (not 1,2,3,4 but 
-        the actual period measurment, Note the x2 between 100 and 0xC8 (200))
-
-        Measurement  | Velocity         | Register         
-        Period (ms)  | Scaling (m/sec)  | 045 Load Value   
-        :----------- | :--------------- | :--------------- 
-        100          | 0.10 m/s         | 0xC8 (default)   
-        40           | 0.25 m/s         | 0x50             
-        20           | 0.50 m/s         | 0x28             
-        10           | 1.00 m/s         | 0x14             
-    *******************************************************************************/
-    void scale(uint8_t Lidar, uint8_t velocityScaling){
-        I2C.write(lidars[Lidar]->address, SCALE_VELOCITY_REGISTER, velocityScaling);
-    };
-
-    /*******************************************************************************
-      Velocity  NOT WORKING (guess, since there is no wait) :
-        - Read the velocity
-
-        This has to be worked on, this is the original implementation without the 
-          blocking architecture
+        The software velocity will be async to avoid the nasty blocking architecture
     *******************************************************************************/
     int velocity(uint8_t Lidar, int * data) {
-      // Set in velocity mode
-      I2C.write(lidars[Lidar]->address, VELOCITY_MODE_REGISTER, VELOCITY_MODE_DATA);
-      //  Write 0x04 to register 0x00 to start getting distance readings
-      I2C.write(lidars[Lidar]->address, 0x00,0x04);
-
-      uint8_t velocityArray[1];
-      uint8_t nack = I2C.readByte(lidars[Lidar]->address, 0x09, velocityArray);
-
-      return((int)((char)velocityArray[0]));
+      // not yet implemented
     };
 
     /*******************************************************************************
@@ -298,7 +270,7 @@ class LidarController {
     *******************************************************************************/
     void resetLidar(uint8_t Lidar = 0) {
       lidars[Lidar]->off();
-      lidars[Lidar]->timer_update();
+      lidars[Lidar]->timerUpdate();
       setState(Lidar, SHUTING_DOWN);
     };
 
@@ -310,7 +282,7 @@ class LidarController {
     void preReset(uint8_t Lidar = 0) {
       resetOngoing = true;
       lidars[Lidar]->on();
-      lidars[Lidar]->timer_update();
+      lidars[Lidar]->timerUpdate();
     };
 
 
@@ -339,7 +311,6 @@ class LidarController {
     uint8_t shouldIncrementNack(uint8_t Lidar = 0, uint8_t nack = 0){
       if(nack){
         lidars[Lidar]->nacksCount += 1;
-        nacks[Lidar] = nack;
       }
       return nack;
     };
@@ -409,13 +380,13 @@ class LidarController {
               Serial.println(i);
               Serial.println(data);
 #endif
-              nacks[i] = nacks[i] & 0b00000111; // Remove the bit
-              if((abs(data - distances[i]) > 100) | (data < 5 or data > 1000)){
+              if((abs(data - lidars[i]->distance) > 100) | (data < 4 or data > 1000)){
                 shouldIncrementNack(i, 1);
-                nacks[i] = 8 | nacks[i]; // Set the suspicious data bit
               }
+              
+              lidars[i]->last_distance = lidars[i]->distance;
+              lidars[i]->distance = data;
               // Write data anyway but the information is send via nacks = 15
-              distances[i] = data;
               setState(i, ACQUISITION_DONE);
             }
             break;
@@ -425,7 +396,7 @@ class LidarController {
             Serial.println(" ACQUISITION_DONE");
 #endif
               signalStrength(i, &strength);
-              signal_strengths[i] = strength;
+              lidars[i]->strength = strength;
 #if FORCE_RESET_OFFSET
               setOffset(i, 0x00);
 #endif
@@ -445,14 +416,14 @@ class LidarController {
             Serial.println(" RESET_PENDING");
 #endif
             // Check the timer, if done, laser is ready to reset, change state
-            if (lidars[i]->check_timer()) {
+            if (lidars[i]->checkTimer()) {
               postReset(i);
               setState(i, NEED_CONFIGURE);
             }
             break;
 
           case SHUTING_DOWN :
-            if (lidars[i]->check_timer()) {
+            if (lidars[i]->checkTimer()) {
               postReset(i);
               setState(i, NEED_RESET);
             }
@@ -464,19 +435,12 @@ class LidarController {
         if(checkNacks(i)){
            resetLidar(i);
         }
-        statuses[i] = (getState(i) & 0xF0) | (nacks[i] & 0x0F);
       } // End for each laser
     };
 
-
-
-    int distances[MAX_LIDARS];
-    int nacks[MAX_LIDARS];
-    uint8_t signal_strengths[MAX_LIDARS];
-    uint8_t statuses[MAX_LIDARS];
+    LidarObject* lidars[MAX_LIDARS];
   private:
     bool resetOngoing = false;
-    LidarObject* lidars[MAX_LIDARS];
     uint8_t count = 0;
 };
 

@@ -36,32 +36,12 @@ class LidarObject {
 *******************************************************************************/
     void begin(uint8_t _EnablePin = 2, uint8_t _ModePin = 1, uint8_t _Lidar = 0x62, uint8_t _configuration = 2,  LIDAR_MODE _mode = DISTANCE, char _name = 'A'){
       pinMode(_EnablePin, OUTPUT);
-      mode = DISTANCE;
+      mode = _mode;
       configuration = _configuration;
       address = _Lidar;
-      lidar_state = NEED_RESET;
       EnablePin = _EnablePin;
       ModePin = _ModePin;
       name = _name;
-    };
-
-
-/*******************************************************************************
-  setName : set the One char long name
-
-  name is a one char long name 
-*******************************************************************************/
-    void setName(char _name){
-      name = _name;
-    };
-
-/*******************************************************************************
-  getName : get the One char long name
-
-  return name which is a one char long name 
-*******************************************************************************/
-    char getName(char _name){
-      return name;
     };
 
 /*******************************************************************************
@@ -79,46 +59,32 @@ class LidarObject {
     };
 
 /*******************************************************************************
-  on : Power On the device
+  enable : ask for PWM reading and allow continuous readings
 *******************************************************************************/
     void enable(){
       digitalWrite(ModePin, HIGH);
     };
 
 /*******************************************************************************
-  off : Power Off the device
+  disable : stops PWM reading and allow continuous readings
 *******************************************************************************/
     void disable(){
       digitalWrite(ModePin, LOW);
     };
 
 /*******************************************************************************
-  timer_update : Update the timer to the current time to start the timer.
+  timerUpdate : Update the timer to the current time to start the timer.
 *******************************************************************************/
-    void timer_update(){
+    void timerUpdate(){
       timeReset = micros();
     };
 
-
 /*******************************************************************************
-  reset_chack : Check the reset timer to see if the laser is correctly resetted
+  checkTimer : Check the reset timer to see if the laser is correctly resetted
 
   The laser takes 20ms to reset
 *******************************************************************************/
-    bool check_reset(){
-      if(lidar_state != NEED_RESET)
-        return true;
-
-      return (micros() - timeReset > 20000);
-    };
-
-
-/*******************************************************************************
-  check_timer : Check the reset timer to see if the laser is correctly resetted
-
-  The laser takes 20ms to reset
-*******************************************************************************/
-    bool check_timer(){
+    bool checkTimer(){
       if(lidar_state != RESET_PENDING)
         return true;
 
@@ -133,15 +99,29 @@ class LidarObject {
       nacksCount = 0;
     };
 
-    LIDAR_MODE mode = DISTANCE;
+/*******************************************************************************
+  setCallback : The nack counter makes the Arduino able to know if a laser 
+  needs to be resetted
+*******************************************************************************/
+    void setCallback(void (*_callback)(int32_t, int32_t, uint8_t, uint8_t)){
+      notify_new_data = _callback;
+    };
+
+    int last_distance = -1;
+    int distance = -1;
+    int velocity = 0;
+    uint8_t strength = 0;
+
     uint8_t nacksCount = 0;
     unsigned long timeReset = 0;
-    uint8_t configuration = 2;
-    uint8_t address = 0x62;
+    uint8_t configuration;
+    uint8_t address;
+    uint8_t EnablePin;
+    uint8_t ModePin;
+    char name;
     LIDAR_STATE lidar_state = NEED_RESET;
-    uint8_t EnablePin = 2;
-    uint8_t ModePin = 1;
-    char name = '\0';
+    LIDAR_MODE mode = DISTANCE;
+    void (*notify_new_data)(int32_t, int32_t, uint8_t, uint8_t);
 };
 
 #endif
