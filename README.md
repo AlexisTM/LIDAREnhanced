@@ -18,7 +18,6 @@ Improvements over the original library
 Limitations
 -----------
 - You have to edit the `MAX_LIDARS` in `LidarController.h` to set the number of instances of lidars you will use (default : 8)
-- Not yet callbacks (soon implemented)
 - There is not (yet) velocity reading, it will be implemented with software (to avoid the badly designed blocking architecture) 
 
 Usage 
@@ -135,6 +134,25 @@ enum LIDAR_MODE {
     int last_distance; // last measure
     int velocity;       // newest velocity
     uint8_t strength;   // newest signal strength
+```
+
+#### Callback configuration 
+
+Check the [full example](example/Callback)) !
+
+```C++ 
+
+// Define the callback
+void distance_callback(LidarObject* self){
+  // self is the laser transmiting the interupt. 
+  Serial.print(self->name);
+  Serial.print(":");
+  Serial.println(self->distance);
+}
+
+// In the setup, link the callback :
+LZ1.setCallbackDistance(&distance_callback);
+LZ2.setCallbackDistance(&distance_callback);
 ```
 
 ### LidarController object
