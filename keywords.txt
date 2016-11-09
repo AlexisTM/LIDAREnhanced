@@ -1,0 +1,80 @@
+#######################################
+# Syntax Coloring Map For LIDAREnhanced
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+I2C KEYWORD1
+I2CFunctions KEYWORD1
+LidarObject KEYWORD1
+LidarController KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+# LidarObject
+begin KEYWORD2
+setName KEYWORD2
+getName KEYWORD2
+on  KEYWORD2
+off  KEYWORD2
+enable KEYWORD2
+disable KEYWORD2
+timer_update KEYWORD2
+check_reset KEYWORD2
+check_timer KEYWORD2
+resetNacksCount  KEYWORD2
+
+# I2C Functions
+# begin KEYWORD2
+isOnline KEYWORD2
+whoisOnline KEYWORD2
+write KEYWORD2
+readByte KEYWORD2
+readWord KEYWORD2
+scan KEYWORD2
+nackError KEYWORD2
+
+# LidarController
+# begin KEYWORD2
+add KEYWORD2
+configure KEYWORD2
+changeAddress KEYWORD2
+status KEYWORD2
+async KEYWORD2
+distance KEYWORD2
+scale KEYWORD2
+velocity KEYWORD2
+signalStrength KEYWORD2
+setState KEYWORD2
+getState KEYWORD2
+setOffset KEYWORD2
+distanceAndAsync KEYWORD2
+resetLidar KEYWORD2
+preReset KEYWORD2
+getCount KEYWORD2
+postReset KEYWORD2
+shouldIncrementNack KEYWORD2
+checkNacks KEYWORD2
+spinOnce KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+LIDAR_STATE LITERAL1
+SHUTING_DOWN LITERAL1
+NEED_RESET LITERAL1
+RESET_PENDING LITERAL1
+NEED_CONFIGURE LITERAL1
+ACQUISITION_READY LITERAL1
+ACQUISITION_PENDING LITERAL1
+ACQUISITION_DONE LITERAL1
+
+LIDAR_MODE LITERAL1
+NONE LITERAL1
+DISTANCE LITERAL1
+VELOCITY LITERAL1
+DISTANCE_AND_VELOCITY LITERAL1
