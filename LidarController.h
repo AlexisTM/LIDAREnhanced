@@ -46,6 +46,8 @@
 // One bit every 10µs (2.5µs in 400kHz)
 // Wait at least 5 bits to wait for slave answer
 #define I2C_WAIT                  50
+
+// Due to I2C problems on the LidarLite v2, it has to be enabled to avoid problems
 #define FORCE_RESET_OFFSET        true
 
 #define PRINT_DEBUG_INFO          false
@@ -207,13 +209,41 @@ class LidarController {
     };
 
     /*******************************************************************************
-      Velocity :
-        - Compute the velocity at certain rate
+      Velocity scaling :
+        - Scale the velocity measures
 
-        The software velocity will be async to avoid the nasty blocking architecture
+        CAUTION, different than the Scale function from LidarLite (not 1,2,3,4 but 
+        the actual period measurment, Note the x2 between 100 and 0xC8 (200))
+
+        Measurement  | Velocity         | Register         
+        Period (ms)  | Scaling (m/sec)  | 045 Load Value   
+        :----------- | :--------------- | :--------------- 
+        100          | 0.10 m/s         | 0xC8 (default)   
+        40           | 0.25 m/s         | 0x50             
+        20           | 0.50 m/s         | 0x28             
+        10           | 1.00 m/s         | 0x14             
+    *******************************************************************************/
+    void scale(uint8_t Lidar, uint8_t velocityScaling){
+        I2C.write(lidars[Lidar]->address, SCALE_VELOCITY_REGISTER, velocityScaling);
+    };
+
+    /*******************************************************************************
+      Velocity  NOT WORKING (guess, since there is no wait) :
+        - Read the velocity
+
+        This has to be worked on, this is the original implementation without the 
+          blocking architecture
     *******************************************************************************/
     int velocity(uint8_t Lidar, int * data) {
-      // not yet implemented
+      // Set in velocity mode
+      I2C.write(lidars[Lidar]->address, VELOCITY_MODE_REGISTER, VELOCITY_MODE_DATA);
+      //  Write 0x04 to register 0x00 to start getting distance readings
+      I2C.write(lidars[Lidar]->address, 0x00,0x04);
+
+      uint8_t velocityArray[1];
+      uint8_t nack = I2C.readByte(lidars[Lidar]->address, 0x09, velocityArray);
+
+      return((int)((char)velocityArray[0]));
     };
 
     /*******************************************************************************
@@ -397,6 +427,7 @@ class LidarController {
 #endif
               signalStrength(i, &strength);
               lidars[i]->strength = strength;
+              lidars[i]->notify_distance();
 #if FORCE_RESET_OFFSET
               setOffset(i, 0x00);
 #endif

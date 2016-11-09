@@ -100,17 +100,37 @@ class LidarObject {
     };
 
 /*******************************************************************************
-  setCallback : The nack counter makes the Arduino able to know if a laser 
-  needs to be resetted
+  setCallbackDistance : sets the distance callback 
 *******************************************************************************/
-    void setCallback(void (*_callback)(int32_t, int32_t, uint8_t, uint8_t)){
-      notify_new_data = _callback;
+    void setCallbackDistance(void (*_callback)(LidarObject * self)){
+      notify_distance_cb = _callback;
     };
 
-    int last_distance = -1;
-    int distance = -1;
-    int velocity = 0;
-    uint8_t strength = 0;
+/*******************************************************************************
+  setCallbackVelocity : sets the velocity callback
+*******************************************************************************/
+    void setCallbackVelocity(void (*_callback)(LidarObject * self, unsigned long dt)){
+      notify_velocity_cb = _callback;
+    };
+
+/*******************************************************************************
+  notify_distance : wraps the callback & callback existence verification 
+*******************************************************************************/
+    inline void notify_distance(){
+      if(notify_distance_cb) notify_distance_cb(this);
+    };
+
+/*******************************************************************************
+  notify_velocity : wraps the callback & callback existence verification 
+*******************************************************************************/
+    inline void notify_velocity(unsigned long dt){
+      if(notify_velocity_cb) notify_velocity_cb(this, dt);
+    };
+
+    int last_distance = -1; // Last distance measured
+    int distance = -1;      // Newest distance
+    int velocity = 0;       // Newest velocity
+    uint8_t strength = 0;   // Newest signal strength
 
     uint8_t nacksCount = 0;
     unsigned long timeReset = 0;
@@ -121,7 +141,8 @@ class LidarObject {
     char name;
     LIDAR_STATE lidar_state = NEED_RESET;
     LIDAR_MODE mode = DISTANCE;
-    void (*notify_new_data)(int32_t, int32_t, uint8_t, uint8_t);
+    void (*notify_distance_cb)(LidarObject * self);
+    void (*notify_velocity_cb)(LidarObject * self, unsigned long dt);
 };
 
 #endif

@@ -51,10 +51,18 @@ static LidarObject LZ2;
 // Delays
 long now, last;
 
+void distance_callback(LidarObject* self){
+  Serial.print(self->name);
+  Serial.print(":");
+  Serial.println(self->distance);
+}
+
 void beginLidars() {
   // Initialisation of the lidars objects
-  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, DISTANCE, 'x');
-  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, DISTANCE, 'X');
+  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, DISTANCE, 'A');
+  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, DISTANCE, 'B');
+  LZ1.setCallbackDistance(&distance_callback);
+  LZ2.setCallbackDistance(&distance_callback);
   // Initialisation of the controller
   Controller.begin(WIRE400K);
   delay(100);
@@ -71,23 +79,4 @@ void setup() {
 
 void loop() {
   Controller.spinOnce();
-  now = micros();
-  if(now - last > DELAY_SEND_MICROS){
-    last = micros();
-    laserprint();
-  } 
-}
-
-void laserprint(){
-  for(byte i = 0; i < NUMBER_OF_LASERS; i++){
-    Serial.print(i);
-    Serial.print("\t");
-    Serial.print(Controller.lidars[i]->distance);
-    Serial.print("\t");
-    Serial.print(Controller.lidars[i]->velocity);
-    Serial.print("\t");
-    Serial.print(Controller.lidars[i]->strength);
-    Serial.print("\t");
-  }
-  Serial.println("");
 }
