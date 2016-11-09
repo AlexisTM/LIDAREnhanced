@@ -3,7 +3,7 @@ LIDAR Lite v3 ENHANCED
 
 Introduction
 --------------
-This library tends to improve the efficiency of the acquisition of LidarLite v2 (deprecated) and LidarLite v3 (release from Garmin) lasermeter.
+This library tends to improve the **efficiency** and the **robustness** of the poor original acquisition library. It is originally released for the LidarLite v2 (deprecated) and compatible with the LidarLite v3 (release from Garmin) lasermeter.
 
 Improvements over the original library
 --------------------
