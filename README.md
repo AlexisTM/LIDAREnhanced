@@ -1,4 +1,4 @@
-LIDAR Lite v3 ENHANCED
+LIDARLite v3 ENHANCED
 =========================
 
 Introduction
