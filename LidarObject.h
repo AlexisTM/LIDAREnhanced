@@ -21,7 +21,7 @@ enum LIDAR_MODE {
   DISTANCE = 1,
   VELOCITY = 2,
   DISTANCE_AND_VELOCITY = 3
-}
+};
 
 class LidarObject {
   public:
@@ -34,7 +34,7 @@ class LidarObject {
 
   If fasti2c is true, use 400kHz I2C
 *******************************************************************************/
-    void begin(byte _EnablePin = 2, byte _ModePin = 1, byte _Lidar = 0x62, byte _configuration = 2,  LIDAR_MODE _mode = DISTANCE, char _name = 'A'){
+    void begin(uint8_t _EnablePin = 2, uint8_t _ModePin = 1, uint8_t _Lidar = 0x62, uint8_t _configuration = 2,  LIDAR_MODE _mode = DISTANCE, char _name = 'A'){
       pinMode(_EnablePin, OUTPUT);
       mode = DISTANCE;
       configuration = _configuration;
@@ -97,7 +97,7 @@ class LidarObject {
 *******************************************************************************/
     void timer_update(){
       timeReset = micros();
-    }
+    };
 
 
 /*******************************************************************************
@@ -110,7 +110,7 @@ class LidarObject {
         return true;
 
       return (micros() - timeReset > 20000);
-    }
+    };
 
 
 /*******************************************************************************
@@ -123,7 +123,7 @@ class LidarObject {
         return true;
 
       return (micros() - timeReset > 20000);
-    }
+    };
 
 /*******************************************************************************
   resetNacksCount : The nack counter makes the Arduino able to know if a laser 
@@ -131,17 +131,17 @@ class LidarObject {
 *******************************************************************************/
     bool resetNacksCount(){
       nacksCount = 0;
-    }
+    };
 
     LIDAR_MODE mode = DISTANCE;
-    byte nacksCount = 0;
+    uint8_t nacksCount = 0;
     unsigned long timeReset = 0;
-    byte configuration = 2;
-    byte address = 0x62;
+    uint8_t configuration = 2;
+    uint8_t address = 0x62;
     LIDAR_STATE lidar_state = NEED_RESET;
-    byte EnablePin = 2;
-    byte ModePin = 1;
-    char name;
+    uint8_t EnablePin = 2;
+    uint8_t ModePin = 1;
+    char name = '\0';
 };
 
 #endif

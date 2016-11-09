@@ -31,7 +31,7 @@ class I2CFunctions {
   returns true if online
           flse if offline
 *******************************************************************************/
-    bool isOnline(byte Device = 0x62){
+    bool isOnline(uint8_t Device = 0x62){
       Wire.beginTransmission(Device);
       if(Wire.endTransmission(STOP_CONDITION_I2C))
         return false;
@@ -43,7 +43,7 @@ class I2CFunctions {
 
   Debug only, it prints on Serial1
 *******************************************************************************/
-    void whoisOnline(int number, byte * Devices){
+    void whoisOnline(int number, uint8_t * Devices){
       for(int i = 0; i < number; i++){
         Serial.print("Device ");
         Serial.print(Devices[i],HEX);
@@ -55,7 +55,7 @@ class I2CFunctions {
     };
 
 /*******************************************************************************
-  write : write a byte to one I2C device at a certain address
+  write : write a uint8_t to one I2C device at a certain address
 
   Device : the I2C device address
   regAdr : The I2C foreign register
@@ -63,16 +63,16 @@ class I2CFunctions {
 
   returns the nack packet
 *******************************************************************************/
-    byte write(byte Device, byte regAdr, byte data){
+    uint8_t write(uint8_t Device, uint8_t regAdr, uint8_t data){
       Wire.beginTransmission(Device);
       Wire.write(regAdr);
       Wire.write(data);
-      byte nackCatcher = Wire.endTransmission(STOP_CONDITION_I2C);
+      uint8_t nackCatcher = Wire.endTransmission(STOP_CONDITION_I2C);
       return nackCatcher;
     };
 
 /*******************************************************************************
-  readByte : read one 8-bit byte from one I2C device
+  readByte : read one 8-bit uint8_t from one I2C device
 
   Device : the I2C device address
   regAdr : The I2C foreign register
@@ -80,17 +80,17 @@ class I2CFunctions {
 
   returns the nack packet
 *******************************************************************************/
-    byte readByte(byte Device, byte regAdr, byte * data){
+    uint8_t readByte(uint8_t Device, uint8_t regAdr, uint8_t * data){
       Wire.beginTransmission(Device);
       Wire.write(regAdr);
-      byte nackCatcher = Wire.endTransmission(STOP_CONDITION_I2C);
-      Wire.requestFrom(Device, byte(1), byte(1));
+      uint8_t nackCatcher = Wire.endTransmission(STOP_CONDITION_I2C);
+      Wire.requestFrom(Device, uint8_t(1), uint8_t(1));
       data[0] = Wire.read();
       return nackCatcher;
     };
 
 /*******************************************************************************
-  readWord : read two 8-bit byte from one I2C device
+  readWord : read two 8-bit uint8_t from one I2C device
 
   Device : the I2C device address
   regAdr : The I2C foreign register
@@ -98,11 +98,11 @@ class I2CFunctions {
 
   returns the nack packet
 *******************************************************************************/
-    byte readWord(byte Device, byte regAdr, byte * data){
+    uint8_t readWord(uint8_t Device, uint8_t regAdr, uint8_t * data){
       Wire.beginTransmission(Device);
       Wire.write(regAdr);
       int nackCatcher = Wire.endTransmission(STOP_CONDITION_I2C);
-      Wire.requestFrom(Device, byte(2), byte(1));
+      Wire.requestFrom(Device, uint8_t(2), uint8_t(1));
       data[0] = Wire.read();
       data[1] = Wire.read();
       return nackCatcher;
@@ -112,7 +112,7 @@ class I2CFunctions {
   scan : debug function used to show which device is currently on the I2C bus
 *******************************************************************************/
     void scan(){
-      byte error, address;
+      uint8_t error, address;
       int nDevices;
       Serial.println("Scanning...");
 
@@ -144,11 +144,11 @@ class I2CFunctions {
 /*******************************************************************************
   nackError : debug function, show the error if we got a NACK error
 
-  error : the byte of error from the I2C device
+  error : the uint8_t of error from the I2C device
 
   returns the error
 *******************************************************************************/
-    byte nackError(byte error) {
+    uint8_t nackError(uint8_t error) {
       if (error) {
         Serial.print("NackError : ");
         switch (error) {
