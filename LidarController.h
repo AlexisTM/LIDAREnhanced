@@ -62,13 +62,6 @@ class LidarController {
       Start the I2C line with the correct frequency
     *******************************************************************************/
     void begin(bool fasti2c = false) {
-      for(uint8_t i=0; i<MAX_LIDARS; i++){
-        lidars[i]->last_distance = 0;
-        lidars[i]->distance = 0;
-        lidars[i]->velocity = 0;
-        lidars[i]->strength = 0;
-      }
-
       Wire.begin();
       if (fasti2c) {
 #if ARDUINO >= 157
@@ -96,31 +89,55 @@ class LidarController {
       configure : Configure the default acquisition mode
 
       configuration : The configuration of the Lidar
-          - 0 = basic configuration
-          - 1 = faster (Do not read 3 times), bit noisier
-          - 2 = low noise, low sensitivity, less false detection (Default)
-          - 3 = High noise, high sensitivity
+      
       Lidar : Address of the Lidar (0x62 by default)
     *******************************************************************************/
     void configure(uint8_t Lidar = 0, uint8_t configuration = 2) {
       uint8_t nack = 0;
-      switch (configuration) {
-        case 0: //  Default configuration
-          nack = I2C.write(lidars[Lidar]->address, CONTROL_REGISTER, 0x00);
-          break;
-        case 1: //  Set aquisition count to 1/3 default value, faster reads, slightly
-          //  noisier values
-          nack = I2C.write(lidars[Lidar]->address, 0x04, 0x00);
-          break;
-        case 2: //  Low noise, low sensitivity: Pulls decision criteria higher
-          //  above the noise, allows fewer false detections, reduces
-          //  sensitivity
-          nack = I2C.write(lidars[Lidar]->address, 0x1c, 0x20);
-          break;
-        case 3: //  High noise, high sensitivity: Pulls decision criteria into the
-          //  noise, allows more false detections, increses sensitivity
-          nack = I2C.write(lidars[Lidar]->address, 0x1c, 0x60);
-          break;
+      switch (configuration){
+        case 0: // Default mode, balanced performance
+          I2C.write(lidars[Lidar]->address, 0x02,0x80); // Default
+          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
+          I2C.write(lidars[Lidar]->address, 0x1c,0x00); // Default
+        break;
+    
+        case 1: // Short range, high speed
+          I2C.write(lidars[Lidar]->address, 0x02,0x1d);
+          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
+          I2C.write(lidars[Lidar]->address, 0x1c,0x00); // Default
+        break;
+    
+        case 2: // Default range, higher speed short range
+          I2C.write(lidars[Lidar]->address, 0x02,0x80); // Default
+          I2C.write(lidars[Lidar]->address, 0x04,0x00);
+          I2C.write(lidars[Lidar]->address, 0x1c,0x00); // Default
+        break;
+    
+        case 3: // Maximum range
+          I2C.write(lidars[Lidar]->address, 0x02,0xff);
+          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
+          I2C.write(lidars[Lidar]->address, 0x1c,0x00); // Default
+        break;
+    
+        case 4: // High sensitivity detection, high erroneous measurements
+          I2C.write(lidars[Lidar]->address, 0x02,0x80); // Default
+          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
+          I2C.write(lidars[Lidar]->address, 0x1c,0x80);
+        break;
+    
+        case 5: // Low sensitivity detection, low erroneous measurements
+          I2C.write(lidars[Lidar]->address, 0x02,0x80); // Default
+          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
+          I2C.write(lidars[Lidar]->address, 0x1c,0xb0);
+        break;
+        
+        /* This mode sometimes kills the laser...
+        case 6: // Fastest with errors
+          I2C.write(lidars[Lidar]->address, 0x02,0x0d); // Fast acquisition mode from examples
+          I2C.write(lidars[Lidar]->address, 0x04,0x04); // Fast acquisition mode from examples
+          I2C.write(lidars[Lidar]->address, 0x12,0x03); // Fast acquisition mode from examples
+          //I2C.write(lidars[Lidar]->address, 0x1c,0xb0); // Fast acquisition mode from examples
+        break*/;
       }
       shouldIncrementNack(Lidar, nack);
     };
@@ -190,8 +207,10 @@ class LidarController {
 
       returns the nack error (0 if no error)
     *******************************************************************************/
-    uint8_t async(uint8_t Lidar = 0) {
-      uint8_t nack = I2C.write(lidars[Lidar]->address, CONTROL_REGISTER, 0x04);
+    uint8_t async(uint8_t Lidar = 0, bool biasCorrection = true) {
+      uint8_t nack = 0;
+      if(biasCorrection) nack = I2C.write(lidars[Lidar]->address, CONTROL_REGISTER, 0x04);
+      else nack = I2C.write(lidars[Lidar]->address, CONTROL_REGISTER, 0x03);
       shouldIncrementNack(Lidar, nack);
     };
 
@@ -341,6 +360,9 @@ class LidarController {
     uint8_t shouldIncrementNack(uint8_t Lidar = 0, uint8_t nack = 0){
       if(nack){
         lidars[Lidar]->nacksCount += 1;
+      } else {
+        // reduce number of resets... but is not valid as it will never reset.
+        //lidars[Lidar]->nacksCount = max(lidars[Lidar]->nacksCount - 1, 0); ;
       }
       return nack;
     };
@@ -362,19 +384,15 @@ class LidarController {
       spinOnce : Main routine to simplify everything in ASYNC mode, checking the
       status of the Lidar for each loop.
         Cases :
-          * NEED_CONFIGURE => Configure the Lidar acquisition mode
-            -> Go to ACQUISITION_READY
-          * ACQUITION_READY => Start the acquisition using async();
-            -> Go to ACQUISITION PENDING
-          * ACQUISITION_PENDING => Checking the busyFlag
+          * ACQUISITION_IN_PROGRESS => Checking the busyFlag
             Get the data and store it in distances
             -> Go to ACQUISITION_READY
           * ACQUISITION_DONE => NOT_USED
-          * NEED_RESET => The Lidar is OFF and waits to be started
+          * NEED_RESET => The Lidar is OFF and waits to be started => RESET_PENDING
           * RESET_PENDING => The Lidar is ON, after being OFF and waits 16 µS to be
-          ready. No other laser can be on at this time
+          ready. No other laser can be on at this time => ACQUISITION_READY
     *******************************************************************************/
-    void spinOnce() {
+    void spinOnce(bool biasCorrection = true) {
       // Handling routine
       //for (int8_t i = count - 1; i >= 0; i--) {
       for(uint8_t i = 0; i<count; i++){
@@ -384,55 +402,33 @@ class LidarController {
 #endif
         uint8_t strength = 0;
         switch (getState(i)) {
-          case NEED_CONFIGURE:
+          
+          case ACQUISITION_IN_PROGRESS : 
 #if PRINT_DEBUG_INFO
-            Serial.println(" NEED_CONFIGURE");
-#endif
-            configure(i);
-            setState(i, ACQUISITION_READY);
-            break;
-          case ACQUISITION_READY:
-#if PRINT_DEBUG_INFO
-            Serial.println(" ACQUISITION_READY");
-#endif
-            async(i);
-            setState(i, ACQUISITION_PENDING);
-            break;
-          case ACQUISITION_PENDING:
-#if PRINT_DEBUG_INFO
-            Serial.println(" ACQUISITION_PENDING");
+            Serial.println(" ACQUISITION_IN_PROGRESS ");
 #endif
             // Get the status bit, if 0 => Acquisition is done
             if (bitRead( status(i), 0) == 0) {
-              int data = 0;
-              distance(i, &data);
+              async(i, biasCorrection); // launch next measure before reading our measure. 
+              
+              lidars[i]->last_distance = lidars[i]->distance;            
+              distance(i, &lidars[i]->distance);
+              signalStrength(i, &lidars[i]->strength);
 #if PRINT_DEBUG_INFO
               Serial.println(i);
-              Serial.println(data);
+              Serial.println(lidars[i]->distance);
 #endif
-              if((abs(data - lidars[i]->distance) > 100) | (data < 4 or data > 1000)){
+              if((abs(lidars[i]->distance - lidars[i]->last_distance) > 100) | (lidars[i]->distance < 4 or lidars[i]->distance > 1000)){
                 shouldIncrementNack(i, 1);
               }
               
-              lidars[i]->last_distance = lidars[i]->distance;
-              lidars[i]->distance = data;
-              // Write data anyway but the information is send via nacks = 15
-              setState(i, ACQUISITION_DONE);
-            }
-            break;
-          case ACQUISITION_DONE:
-
-#if PRINT_DEBUG_INFO
-            Serial.println(" ACQUISITION_DONE");
-#endif
-              signalStrength(i, &strength);
-              lidars[i]->strength = strength;
               lidars[i]->notify_distance();
 #if FORCE_RESET_OFFSET
               setOffset(i, 0x00);
 #endif
-              setState(i, ACQUISITION_READY);
+            }
             break;
+            
           case NEED_RESET:
 #if PRINT_DEBUG_INFO
             Serial.println(" NEED_RESET");
@@ -449,7 +445,9 @@ class LidarController {
             // Check the timer, if done, laser is ready to reset, change state
             if (lidars[i]->checkTimer()) {
               postReset(i);
-              setState(i, NEED_CONFIGURE);
+              configure(i, lidars[i]->configuration);
+              async(i);
+              setState(i, ACQUISITION_IN_PROGRESS);
             }
             break;
 
@@ -477,3 +475,4 @@ class LidarController {
 
 
 #endif
+

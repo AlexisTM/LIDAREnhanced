@@ -10,10 +10,7 @@ enum LIDAR_STATE {
   SHUTING_DOWN = 240,       // Shutdown the laser to reset it
   NEED_RESET = 48,          // Too much outliers, need to reset
   RESET_PENDING = 80,       // Wait 15ms after you reset the Lidar, we are waiting in this state
-  NEED_CONFIGURE = 144,     // 15ms passed, we now configure the Lidar
-  ACQUISITION_READY = 32,   // I started an acquisition, need someone to read it
-  ACQUISITION_PENDING = 64, // The acquisition in on progress
-  ACQUISITION_DONE = 128    // I read the data, need to start an acq again
+  ACQUISITION_IN_PROGRESS = 64, // The acquisition in on progress
 };
 
 enum LIDAR_MODE {
@@ -36,6 +33,12 @@ class LidarObject {
 *******************************************************************************/
     void begin(uint8_t _EnablePin = 2, uint8_t _ModePin = 1, uint8_t _Lidar = 0x62, uint8_t _configuration = 2,  LIDAR_MODE _mode = DISTANCE, char _name = 'A'){
       pinMode(_EnablePin, OUTPUT);
+      off();
+      last_distance = 0;
+      distance = 0;
+      velocity = 0;
+      strength = 0;
+      
       mode = _mode;
       configuration = _configuration;
       address = _Lidar;
