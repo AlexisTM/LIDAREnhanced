@@ -8,7 +8,7 @@
 ------------------------------------------------------------------------------*/
 
 #include <Wire.h>
-#include "I2CFunctions.h"
+#include "I2CFunctions.h" 
 #include "LidarObject.h"
 #include "LidarController.h"
 
@@ -53,7 +53,6 @@ static LidarObject LZ1;
 static LidarObject LZ2;
 static LidarObject LZ3;
 static LidarObject LZ4;
-static LidarObject LZ5;
 
 long now, last;
 int errors = 0;
@@ -65,22 +64,19 @@ void setup()
 {
   Serial.begin(115200);
   LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, DISTANCE, 'A');
-  //LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 0, DISTANCE, 'B');
-  //LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_AD, 0, DISTANCE, 'C');
-  //LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_AD, 0, DISTANCE, 'D');
-  //LZ5.begin(Z5_LASER_EN, Z5_LASER_PIN, Z5_LASER_AD, 1, DISTANCE, 'E');
+  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, DISTANCE, 'B');
+  LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_AD, 2, DISTANCE, 'C');
+  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_AD, 2, DISTANCE, 'D');
 
   LZ1.setCallbackDistance(&distance_callback);
-  //LZ2.setCallbackDistance(&distance_callback);
-  //LZ3.setCallbackDistance(&distance_callback);
-  //LZ4.setCallbackDistance(&distance_callback);
-  //LZ5.setCallbackDistance(&distance_callback);
+  LZ2.setCallbackDistance(&distance_callback);
+  LZ3.setCallbackDistance(&distance_callback);
+  LZ4.setCallbackDistance(&distance_callback);
   
   Controller.add(&LZ1, 0);
-  //Controller.add(&LZ2, 1);
-  //Controller.add(&LZ3, 2);
-  //Controller.add(&LZ4, 3);
-  //Controller.add(&LZ5, 4);
+  Controller.add(&LZ2, 1);
+  Controller.add(&LZ3, 2);
+  Controller.add(&LZ4, 3);
   delay(100);
   Controller.begin(WIRE400K);
   delay(100);
@@ -88,7 +84,10 @@ void setup()
 
 void distance_callback(LidarObject* self){
   measureCount++;
-  isError(self->distance);
+  isError(self);
+  /*Serial.print(self->name);
+  Serial.print(":");
+  Serial.println(self->distance);*/
 }
 
 void loop()
@@ -96,10 +95,10 @@ void loop()
   Serial.println("Starting...");
   
   for(int conf = 0; conf < 6; conf++){
-    reconfigure(conf);
+    //reconfigure(conf);
     last = micros();
-    for(long i = 0; i < 10000; i++){
-      Controller.spinOnce(true);
+    for(long i = 0; i < 1000; i++){
+      Controller.spinOnce(false);
     }
     now = micros();
     Serial.print("Configuration ");
@@ -116,31 +115,31 @@ void loop()
   }
 }
 
-void isError(int data){
-  if(data > 500) {
+void isError(LidarObject* self){
+  if(self->distance > 500) {
     errors++;
-  } else if(data < 50){
+    Serial.print(self->name);
+    Serial.print(":");
+    Serial.println(self->distance);
+  } else if(self->distance < 50){
     errors++;
+    Serial.print(self->name);
+    Serial.print(":");
+    Serial.println(self->distance);
   }
 }
 
 void reconfigure(int conf){
-  LZ1.configuration = conf;
-  LZ1.lidar_state = NEED_RESET;
-  /*
-  LZ2.configuration = conf;
-  LZ3.configuration = conf;
-  LZ4.configuration = conf;
-  LZ5.configuration = conf;
-  LZ2.lidar_state = NEED_RESET;
-  LZ3.lidar_state = NEED_RESET;
-  LZ4.lidar_state = NEED_RESET;
-  LZ5.lidar_state = NEED_RESET;
-  */
+  for(int j = 0; j < 4; j++){
+    Controller.lidars[j]->configuration = conf;
+    Controller.resetLidar(j);
+  }
   
-  Controller.spinOnce();
-  delay(20);
-  Controller.spinOnce();
-  delay(20);
-  Controller.spinOnce();
+  for(int j = 0; j < 4; j++){
+    Controller.spinOnce();
+    delay(20);
+    Controller.spinOnce();
+    delay(20);
+    Controller.spinOnce();
+  }
 }

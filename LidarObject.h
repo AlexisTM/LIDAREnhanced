@@ -95,6 +95,13 @@ class LidarObject {
     };
 
 /*******************************************************************************
+  checkLastMeasure : If the laser do not give new data, simply reset it
+*******************************************************************************/
+    bool checkLastMeasure(){
+      return (micros() - lastMeasure > 200000);
+    };
+
+/*******************************************************************************
   resetNacksCount : The nack counter makes the Arduino able to know if a laser 
   needs to be resetted
 *******************************************************************************/
@@ -141,6 +148,7 @@ class LidarObject {
     uint8_t address;
     uint8_t EnablePin;
     uint8_t ModePin;
+    long lastMeasure = 0;
     char name;
     LIDAR_STATE lidar_state = NEED_RESET;
     LIDAR_MODE mode = DISTANCE;

@@ -8,17 +8,32 @@ This library tends to improve the **efficiency** and the **robustness** of the p
 Improvements over the original library
 --------------------
 - *Asynchronous acquisition*
-- Non-blocking architecture
-- *Automatic reset* of the lidars
+- **Non-blocking** architecture
+- *Automatic reset* of the lidars if too much errors
 - *State machine* for each lidar
 - *Maximum speed* readings for many lidars (enable 400kHz I2C)
-- The whole library with Serial & Arduino firmware weight *7200 uint8_ts* of the memory for 
- lasers
+- Don't think about lasers anytime, it just make the acquisition in the background.
 
 Limitations
 -----------
 - You have to edit the `MAX_LIDARS` in `LidarController.h` to set the number of instances of lidars you will use (default : 8)
 - There is not (yet) velocity reading, it will be implemented with software (to avoid the badly designed blocking architecture) 
+- Speed limited by the I2C bandwidth
+
+How fast is it ?
+-----------
+
+The maximal speed is mainly limited by I2C speed more than the configuration. Therefore, I advise you to choose the most *stable* than the most speedy.
+
+* 100 kHz
+  - 800Hz With FORCE_RESET_OFFSET **and** ENABLE_STRENGTH_MEASURE to **true**
+  - 1050Hz With FORCE_RESET_OFFSET **or** ENABLE_STRENGTH_MEASURE to **true**
+  - 1300Hz With FORCE_RESET_OFFSET **and** ENABLE_STRENGTH_MEASURE to **false**
+* 400 kHz
+  - 1325Hz With FORCE_RESET_OFFSET **and** ENABLE_STRENGTH_MEASURE to **true**
+  - 1575Hz With FORCE_RESET_OFFSET **or** ENABLE_STRENGTH_MEASURE to **true**
+  - 2080Hz With FORCE_RESET_OFFSET **and** ENABLE_STRENGTH_MEASURE to **false**
+
 
 Usage 
 -------

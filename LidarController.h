@@ -48,7 +48,8 @@
 #define I2C_WAIT                  50
 
 // Due to I2C problems on the LidarLite v2, it has to be enabled to avoid problems
-#define FORCE_RESET_OFFSET        true
+#define FORCE_RESET_OFFSET        false
+#define ENABLE_STRENGTH_MEASURE   false
 
 #define PRINT_DEBUG_INFO          false
 #define LIDAR_TIMEOUT_MS          20
@@ -413,7 +414,9 @@ class LidarController {
               
               lidars[i]->last_distance = lidars[i]->distance;            
               distance(i, &lidars[i]->distance);
+#if ENABLE_STRENGTH_MEASURE
               signalStrength(i, &lidars[i]->strength);
+#endif
 #if PRINT_DEBUG_INFO
               Serial.println(i);
               Serial.println(lidars[i]->distance);
@@ -426,6 +429,11 @@ class LidarController {
 #if FORCE_RESET_OFFSET
               setOffset(i, 0x00);
 #endif
+              lidars[i]->lastMeasure = micros();
+            } else {
+              if(lidars[i]->checkLastMeasure()){
+                setState(i, SHUTING_DOWN);
+              }
             }
             break;
             
@@ -447,13 +455,16 @@ class LidarController {
               postReset(i);
               configure(i, lidars[i]->configuration);
               async(i);
+              lidars[i]->lastMeasure = micros();
               setState(i, ACQUISITION_IN_PROGRESS);
             }
             break;
 
           case SHUTING_DOWN :
+#if PRINT_DEBUG_INFO
+            Serial.println(" SHUTING_DOWN");
+#endif
             if (lidars[i]->checkTimer()) {
-              postReset(i);
               setState(i, NEED_RESET);
             }
             break;
@@ -462,7 +473,7 @@ class LidarController {
         } // End switch case
 
         if(checkNacks(i)){
-           resetLidar(i);
+           //resetLidar(i);
         }
       } // End for each laser
     };
