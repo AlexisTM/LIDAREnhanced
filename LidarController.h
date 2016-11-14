@@ -18,7 +18,13 @@
 #define PRINT_DEBUG_INFO          false
 #define LIDAR_TIMEOUT_MS          20
 #define MAX_LIDARS                8
+// Force reset on errors. It resets the lasers on MAX_NACKS error.
+// An error is a misreading (nack) or an incoherent value
 #define MAX_NACKS                 25
+#define ERROR_MAX_VALUE           1000
+#define ERROR_MIN_VALUE           4
+// Difference of measure between two measurements
+#define ERROR_MAX_DIFF_VALUE      100
 
 
 // Registers are separeted between READ & WRITE registers.
@@ -155,9 +161,6 @@
 #define DATA_PARTY_LINE_ON        0x00
 #define DATA_PARTY_LINE_OFF       0x08
 #define DATA_VELOCITY_MODE_DATA   0xa0
-
-// Busyflag from REG_STATUS_REGISTER
-#define BUSYFLAG_READY_VALUE      0x00
 
 class LidarController {
   public:
@@ -494,7 +497,7 @@ class LidarController {
     void spinOnce(bool biasCorrection = true) {
       // Handling routine
       //for (int8_t i = count - 1; i >= 0; i--) {
-      for(uint8_t i = 0; i<count; i++){
+      for(uint8_t i = 0; i < count; i++){
 #if PRINT_DEBUG_INFO
         Serial.print("Laser ");
         Serial.print(i);
@@ -519,7 +522,7 @@ class LidarController {
               Serial.println(i);
               Serial.println(lidars[i]->distance);
 #endif
-              if((abs(lidars[i]->distance - lidars[i]->last_distance) > 100) | (lidars[i]->distance < 4 or lidars[i]->distance > 1000)){
+              if((abs(lidars[i]->distance - lidars[i]->last_distance) > ERROR_MAX_DIFF_VALUE) | (lidars[i]->distance < ERROR_MIN_VALUE or lidars[i]->distance > ERROR_MAX_VALUE)){
                 shouldIncrementNack(i, 1);
               }
               
