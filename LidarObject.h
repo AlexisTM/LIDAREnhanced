@@ -149,6 +149,8 @@ class LidarObject {
     uint8_t address;
     uint8_t EnablePin;
     uint8_t ModePin;
+    uint8_t TrigPin;
+    
     long lastMeasure = 0;
     char name;
     LIDAR_STATE lidar_state = NEED_RESET;
