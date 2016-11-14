@@ -5,7 +5,20 @@
 #include "LidarObject.h"
 #include <Wire.h>
 
-// LASER MODES
+// Wait between I2C transactions in µs
+// One bit every 10µs (2.5µs in 400kHz)
+// Wait at least 5 bits to wait for slave answer
+// Not used
+#define I2C_WAIT                  50
+
+// Due to I2C problems on the LidarLite v2, it has to be enabled to avoid problems
+#define FORCE_RESET_OFFSET        true
+#define ENABLE_STRENGTH_MEASURE   true
+
+#define PRINT_DEBUG_INFO          false
+#define LIDAR_TIMEOUT_MS          20
+#define MAX_LIDARS                8
+#define MAX_NACKS                 25
 
 
 // Registers are separeted between READ & WRITE registers.
@@ -15,51 +28,141 @@
 
 // READ Registers
 // Those are registers we only READ from
-#define STATUS_REGISTER           0x01
-#define SIGNAL_STRENGTH_REGISTER  0x0e
-#define ERROR_REGISTER            0x40
+// System status
+/** 
+ * bit 6: Process error flag
+ * - 0 No error
+ * - 1 Error
+ * bit 5: Health flag
+ * - 0 Error
+ * - 1 No error
+ * bit 4: Secondary return flag
+ * - 0 No secondary return
+ * - 1 Secondary return
+ * bit 3: Invalid signal flag
+ * - 0 Peak detected
+ * - 1 No peak detected
+ * bit 2: Signal overflow flag
+ * - 0 Oveflow detected
+ * - 1 No overflow
+ * bit 1: Reference overflow flag
+ * - 0 Oveflow detected
+ * - 1 No overflow
+ * bit 0: Busy flag
+ * - 0 Ready 
+ * - 1 Busy
+ */
+#define REG_STATUS                0x01 
+// Velocity output  
+#define REG_VELOCITY              0x09
+// Correlation Record noise floor
+#define REG_NOISE_PEAK            0x0d
+// Signal strength
+#define REG_SIGNAL_STRENGTH       0x0e
+// Distance measurement delay
+#define REG_FULL_DELAY_HIGH       0x0f
+#define REG_FULL_DELAY_LOW        0x10
+// Previous distance measurement
+#define LAST_DELAY_HIGH           0x14
+#define LAST_DELAY_LOW            0x15
+// Unit serial unique code
+#define REG_UNIT_ID_HIGH          0x16
+#define REG_UNIT_ID_LOW           0x17
+// Second largest peak value in correlation record
+#define REG_PEAK_BCK              0x4c
+// Correlation record data low & high byte
+#define REG_CORR_DATA_LOW         0x52
+#define REG_CORR_DATA_HIGH        0x53
+#define REG_CORR_DATA_DUAL        0xd2
+
 #define MEASURED_VALUE_REGISTER   0x8f
 #define READ_SERIAL_REGISTERS     0x96
 
 // WRITE Registers
 // Those are register we only WRITE on
-#define CONTROL_REGISTER          0x00
-#define SERIAL1_REGISTER          0x18
-#define SERIAL2_REGISTER          0x19
-#define ADDRESS_REGISTER          0x1a
-#define PARTY_LINE_REGISTER       0x1e
-#define COMMAND_REGISTER          0x40
-#define SCALE_VELOCITY_REGISTER   0x45
-#define VELOCITY_MODE_REGISTER    0x04
-#define OFFSET_REGISTER           0x13
+// COMMAND REGISTER
+#define REG_ACQ_COMMAND           0x00
+// Maximum acquisition count, default 0x80
+#define REG_SIG_CONT_VAL          0x02
+// Acquisition mode control, default 0x08
+/** 
+ * bit 6:
+ * - 0 Enable reference process during measurement
+ * - 1 Disable reference process during measurement
+ * bit 5:
+ * - 0 Use default delay for burst and free running mode
+ * - 1 Use REG_MEASURE_DELAY for burst and free running mode
+ * bit 4:
+ * - 0 Enable reference filter (average 8 measurements)
+ * - 1 Disable reference filter
+ * bit 3:
+ * - 0 Enable quick termination if maximal delay reached
+ * - 1 Disable quick termination if maximal delay reached
+ * bit 2:
+ * - 0 Use default acquisition count of 5
+ * - 1 Use REG_REF_COUNT_VAL acquisition count.
+ * bit 0-1:
+ * - 00 default pwm mode, pull trigger low to trigger, high output (mode) of of 10us/cm
+ * - 01 Status output mode, mode will be put high while busy and low when done
+ * - 10 Fixed delay PWM, pulling trig to low does not trigger a measurement
+ * - 11 Oscillator output mode, output 31.25kHz +/-1% 
+ */
+#define REG_ACQ_CONFIG            0x04
+// Burst measurement count control, default 0x08
+/**
+ * - 0x00-0x01 One measurement per command
+ * - 0x02-0xfe Repetition count
+ * - 0xff Indefinite repetition after initial command
+ */
+#define REG_OUTER_LOOP_COUNT      0x11
+// Reference acquisition count, default 0x05
+#define REG_REF_COUNT_VAL         0x12
+// Offset register (signed int8_t), default 0x00 (disabled in v3?)
+#define REG_OFFSET_REGISTER       0x13
+// Write ID to this register for I2C address change unlock
+#define REG_I2C_ID_HIGH           0x18
+#define REG_I2C_ID_LOW            0x19
+// I2C address register
+#define REG_I2C_SEC_ADDR          0x1a
+// Peak detection threshold bypass, default 0x00
+/**
+ * - 0x00 Default valid measurement
+ * - 0x01-0xff Set threshold value for valid measurement (0x20 - 0x60 performs well)
+ * - 0xff Indefinite repetition after initial command
+ */
+#define REG_THRESHOLD_BYPASS      0x1c
+// Default address response control, default 0x00 = party line on, 0x08 = party line off, the bit 8
+#define REG_I2C_CONFIG            0x1e
+// State command
+// Read is error register
+/**
+ * - 0x00 Disable test mode
+ * - 0x07 Enable test mode, ability to read correlation data
+ * - C
+ */
+#define REG_COMMAND               0x40
+// Delay between measurements (and velocity scale register), default 0x14
+#define REG_MEASURE_DELAY         0x45
+// Correlation record memory bank select
+#define REG_ACQ_SETTINGS          0x5d
+// Power state control, default 0x80
+#define REG_POWER_CONTROL         0x65
 
-// Values
-#define INITIATE_VALUE            0x04
-#define PARTY_LINE_ON             0x00
-#define PARTY_LINE_OFF            0x08
-#define VELOCITY_MODE_DATA        0xa0
+// Typical register data to write
+#define DATA_RESET_ALL            0x00
+#define DATA_MEASURE_WITHOUT_BIAS 0x03
+#define DATA_MEASURE_WITH_BIAS    0x04
+#define DATA_PARTY_LINE_ON        0x00
+#define DATA_PARTY_LINE_OFF       0x08
+#define DATA_VELOCITY_MODE_DATA   0xa0
 
-// Busyflag from STATUS_REGISTER
+// Busyflag from REG_STATUS_REGISTER
 #define BUSYFLAG_READY_VALUE      0x00
-
-// Wait between I2C transactions in µs
-// One bit every 10µs (2.5µs in 400kHz)
-// Wait at least 5 bits to wait for slave answer
-#define I2C_WAIT                  50
-
-// Due to I2C problems on the LidarLite v2, it has to be enabled to avoid problems
-#define FORCE_RESET_OFFSET        false
-#define ENABLE_STRENGTH_MEASURE   false
-
-#define PRINT_DEBUG_INFO          false
-#define LIDAR_TIMEOUT_MS          20
-#define MAX_LIDARS                8
-#define MAX_NACKS                 10
 
 class LidarController {
   public:
     /*******************************************************************************
-      begin :
+      begin:
       Start the I2C line with the correct frequency
     *******************************************************************************/
     void begin(bool fasti2c = false) {
@@ -74,8 +177,8 @@ class LidarController {
     }
 
     /*******************************************************************************
-      add :
-      Add a new Lidar and use resetLidar : It assure the lidar is NOT on the 0x62 line
+      add:
+      Add a new Lidar and use resetLidar: It assure the lidar is NOT on the 0x62 line
     *******************************************************************************/
     bool add(LidarObject* _Lidar, uint8_t _id) {
       if (_id >= MAX_LIDARS)
@@ -87,64 +190,59 @@ class LidarController {
     }
 
     /*******************************************************************************
-      configure : Configure the default acquisition mode
+      configure: Configure the default acquisition mode
 
-      configuration : The configuration of the Lidar
+      configuration: The configuration of the Lidar
       
-      Lidar : Address of the Lidar (0x62 by default)
+      Lidar: Address of the Lidar (0x62 by default)
     *******************************************************************************/
     void configure(uint8_t Lidar = 0, uint8_t configuration = 2) {
       uint8_t nack = 0;
+      // REG_SIG_CONT_VAL = Maximum acquisition count, default 0x80
+      // REG_ACQ_CONFIG = Burst measurement count control, default 0x08
+      // REG_THRESHOLD_BYPASS = Peak detection threshold bypass, default 0x00
       switch (configuration){
         case 0: // Default mode, balanced performance
-          I2C.write(lidars[Lidar]->address, 0x02,0x80); // Default
-          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
-          I2C.write(lidars[Lidar]->address, 0x1c,0x00); // Default
+          I2C.write(lidars[Lidar]->address, REG_SIG_CONT_VAL, 0x80); // Default
+          I2C.write(lidars[Lidar]->address, REG_ACQ_CONFIG, 0x08); // Default
+          I2C.write(lidars[Lidar]->address, REG_THRESHOLD_BYPASS, 0x00); // Default
         break;
     
         case 1: // Short range, high speed
-          I2C.write(lidars[Lidar]->address, 0x02,0x1d);
-          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
-          I2C.write(lidars[Lidar]->address, 0x1c,0x00); // Default
+          I2C.write(lidars[Lidar]->address, REG_SIG_CONT_VAL, 0x1d);
+          I2C.write(lidars[Lidar]->address, REG_ACQ_CONFIG, 0x08); // Default
+          I2C.write(lidars[Lidar]->address, REG_THRESHOLD_BYPASS, 0x00); // Default
         break;
     
         case 2: // Default range, higher speed short range
-          I2C.write(lidars[Lidar]->address, 0x02,0x80); // Default
-          I2C.write(lidars[Lidar]->address, 0x04,0x00);
-          I2C.write(lidars[Lidar]->address, 0x1c,0x00); // Default
+          I2C.write(lidars[Lidar]->address, REG_SIG_CONT_VAL, 0x80); // Default
+          I2C.write(lidars[Lidar]->address, REG_ACQ_CONFIG, 0x00);
+          I2C.write(lidars[Lidar]->address, REG_THRESHOLD_BYPASS, 0x00); // Default
         break;
     
         case 3: // Maximum range
-          I2C.write(lidars[Lidar]->address, 0x02,0xff);
-          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
-          I2C.write(lidars[Lidar]->address, 0x1c,0x00); // Default
+          I2C.write(lidars[Lidar]->address, REG_SIG_CONT_VAL, 0xff);
+          I2C.write(lidars[Lidar]->address, REG_ACQ_CONFIG, 0x08); // Default
+          I2C.write(lidars[Lidar]->address, REG_THRESHOLD_BYPASS, 0x00); // Default
         break;
     
         case 4: // High sensitivity detection, high erroneous measurements
-          I2C.write(lidars[Lidar]->address, 0x02,0x80); // Default
-          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
-          I2C.write(lidars[Lidar]->address, 0x1c,0x80);
+          I2C.write(lidars[Lidar]->address, REG_SIG_CONT_VAL, 0x80); // Default
+          I2C.write(lidars[Lidar]->address, REG_ACQ_CONFIG, 0x08); // Default
+          I2C.write(lidars[Lidar]->address, REG_THRESHOLD_BYPASS, 0x80);
         break;
     
         case 5: // Low sensitivity detection, low erroneous measurements
-          I2C.write(lidars[Lidar]->address, 0x02,0x80); // Default
-          I2C.write(lidars[Lidar]->address, 0x04,0x08); // Default
-          I2C.write(lidars[Lidar]->address, 0x1c,0xb0);
+          I2C.write(lidars[Lidar]->address, REG_SIG_CONT_VAL, 0x80); // Default
+          I2C.write(lidars[Lidar]->address, REG_ACQ_CONFIG, 0x08); // Default
+          I2C.write(lidars[Lidar]->address, REG_THRESHOLD_BYPASS, 0xb0);
         break;
-        
-        /* This mode sometimes kills the laser...
-        case 6: // Fastest with errors
-          I2C.write(lidars[Lidar]->address, 0x02,0x0d); // Fast acquisition mode from examples
-          I2C.write(lidars[Lidar]->address, 0x04,0x04); // Fast acquisition mode from examples
-          I2C.write(lidars[Lidar]->address, 0x12,0x03); // Fast acquisition mode from examples
-          //I2C.write(lidars[Lidar]->address, 0x1c,0xb0); // Fast acquisition mode from examples
-        break*/;
       }
       shouldIncrementNack(Lidar, nack);
     };
 
     /*******************************************************************************
-      changeAddress : Change the address of one Lidar
+      changeAddress: Change the address of one Lidar
 
       returns 0 if success
             1 if error writing the serial number (uint8_t 1)
@@ -189,20 +287,20 @@ class LidarController {
     };
 
     /*******************************************************************************
-      status : check the status of the Lidar
+      status: check the status of the Lidar
 
       returns the status register (0x01 for version 21 of the Lidar Software)
     *******************************************************************************/
     uint8_t status(uint8_t Lidar = 0) {
       uint8_t data[1] = {171}; // Initializing with a non 0 NOR 1 data to ensure we got
       // no interference
-      uint8_t nack = I2C.readByte(lidars[Lidar]->address, 0x01, data);
+      uint8_t nack = I2C.readByte(lidars[Lidar]->address, REG_STATUS, data);
       shouldIncrementNack(Lidar, nack);
       return data[0];
     };
 
     /*******************************************************************************
-      async : start an acquisition
+      async: start an acquisition
                   - with preamp enabled
                   - with DC stabilization
 
@@ -210,13 +308,13 @@ class LidarController {
     *******************************************************************************/
     uint8_t async(uint8_t Lidar = 0, bool biasCorrection = true) {
       uint8_t nack = 0;
-      if(biasCorrection) nack = I2C.write(lidars[Lidar]->address, CONTROL_REGISTER, 0x04);
-      else nack = I2C.write(lidars[Lidar]->address, CONTROL_REGISTER, 0x03);
+      if(biasCorrection) nack = I2C.write(lidars[Lidar]->address, REG_ACQ_COMMAND, DATA_MEASURE_WITH_BIAS);
+      else nack = I2C.write(lidars[Lidar]->address, REG_ACQ_COMMAND, DATA_MEASURE_WITHOUT_BIAS);
       shouldIncrementNack(Lidar, nack);
     };
 
     /*******************************************************************************
-      distance :
+      distance:
         - Read the measured value from data registers
     *******************************************************************************/
     uint8_t distance(uint8_t Lidar, int * data) {
@@ -229,7 +327,7 @@ class LidarController {
     };
 
     /*******************************************************************************
-      Velocity scaling :
+      Velocity scaling:
         - Scale the velocity measures
 
         CAUTION, different than the Scale function from LidarLite (not 1,2,3,4 but 
@@ -237,18 +335,18 @@ class LidarController {
 
         Measurement  | Velocity         | Register         
         Period (ms)  | Scaling (m/sec)  | 045 Load Value   
-        :----------- | :--------------- | :--------------- 
+       :----------- |:--------------- |:--------------- 
         100          | 0.10 m/s         | 0xC8 (default)   
         40           | 0.25 m/s         | 0x50             
         20           | 0.50 m/s         | 0x28             
         10           | 1.00 m/s         | 0x14             
     *******************************************************************************/
     void scale(uint8_t Lidar, uint8_t velocityScaling){
-        I2C.write(lidars[Lidar]->address, SCALE_VELOCITY_REGISTER, velocityScaling);
+        I2C.write(lidars[Lidar]->address, REG_MEASURE_DELAY, velocityScaling);
     };
 
     /*******************************************************************************
-      Velocity  NOT WORKING (guess, since there is no wait) :
+      Velocity  NOT WORKING (guess, since there is no wait):
         - Read the velocity
 
         This has to be worked on, this is the original implementation without the 
@@ -256,49 +354,49 @@ class LidarController {
     *******************************************************************************/
     int velocity(uint8_t Lidar, int * data) {
       // Set in velocity mode
-      I2C.write(lidars[Lidar]->address, VELOCITY_MODE_REGISTER, VELOCITY_MODE_DATA);
+      I2C.write(lidars[Lidar]->address, REG_ACQ_CONFIG, DATA_VELOCITY_MODE_DATA);
       //  Write 0x04 to register 0x00 to start getting distance readings
-      I2C.write(lidars[Lidar]->address, 0x00,0x04);
+      I2C.write(lidars[Lidar]->address, REG_ACQ_COMMAND, DATA_MEASURE_WITH_BIAS);
 
       uint8_t velocityArray[1];
-      uint8_t nack = I2C.readByte(lidars[Lidar]->address, 0x09, velocityArray);
+      uint8_t nack = I2C.readByte(lidars[Lidar]->address, REG_VELOCITY, velocityArray);
 
       return((int)((char)velocityArray[0]));
     };
 
     /*******************************************************************************
-      signalStrength :
+      signalStrength:
         - Read the signal strength of the last reading
     *******************************************************************************/
     int signalStrength(uint8_t Lidar, uint8_t * signalStrengthArray) {
-      uint8_t nack = I2C.readByte(lidars[Lidar]->address, SIGNAL_STRENGTH_REGISTER, signalStrengthArray);
+      uint8_t nack = I2C.readByte(lidars[Lidar]->address, REG_SIGNAL_STRENGTH, signalStrengthArray);
       shouldIncrementNack(Lidar, nack);
       return nack;
     };
 
     /*******************************************************************************
-      setState : Change the status of the Lidar Object
+      setState: Change the status of the Lidar Object
     *******************************************************************************/
     void setState(uint8_t Lidar = 0, LIDAR_STATE _lidar_state = NEED_RESET) {
       lidars[Lidar]->lidar_state = _lidar_state;
     };
 
     /*******************************************************************************
-      getState : Get the status of the Lidar Object
+      getState: Get the status of the Lidar Object
     *******************************************************************************/
     LIDAR_STATE getState(uint8_t Lidar = 0) {
       return lidars[Lidar]->lidar_state;
     };
 
     /*******************************************************************************
-      setOffset : Set an offset to the Lidar
+      setOffset: Set an offset to the Lidar
     *******************************************************************************/
     void setOffset(uint8_t Lidar, uint8_t data) {
-        I2C.write(lidars[Lidar]->address, OFFSET_REGISTER, data);
+        I2C.write(lidars[Lidar]->address, REG_OFFSET_REGISTER, data);
     };
 
     /*******************************************************************************
-      distanceAndAsync : Get the distance then start a new acquisition
+      distanceAndAsync: Get the distance then start a new acquisition
 
       We could use the async() method in ACQUISITION_DONE, but it would need to spin
       one time more before starting the acquisition again
@@ -314,7 +412,7 @@ class LidarController {
     };
 
     /*******************************************************************************
-      resetLidar :
+      resetLidar:
         * set the Power Enable pin to 0
         * set the Need Reset state to be reinitialized 20ms later
     *******************************************************************************/
@@ -325,7 +423,7 @@ class LidarController {
     };
 
     /*******************************************************************************
-      preReset :
+      preReset:
         * set the reset latch (resetOngoing) to true to prevent starting 2 lidars simultaneously
         * set the lidar on & start the 16 µS timer
     *******************************************************************************/
@@ -337,7 +435,7 @@ class LidarController {
 
 
     /*******************************************************************************
-      getCount :
+      getCount:
         * returns the count of the lasers
     *******************************************************************************/
     uint8_t getCount(){
@@ -345,7 +443,7 @@ class LidarController {
     };
 
     /*******************************************************************************
-      postReset :
+      postReset:
         * change the lidar address
         * stop the reset ongoing
     *******************************************************************************/
@@ -356,7 +454,7 @@ class LidarController {
 
 
     /*******************************************************************************
-      shouldIncrementNack : increments the nacksCount if nack happens
+      shouldIncrementNack: increments the nacksCount if nack happens
     *******************************************************************************/
     uint8_t shouldIncrementNack(uint8_t Lidar = 0, uint8_t nack = 0){
       if(nack){
@@ -369,7 +467,7 @@ class LidarController {
     };
 
     /*******************************************************************************
-      checkNacks : Returns if the laser needs or not a reset
+      checkNacks: Returns if the laser needs or not a reset
         if have to be resetted, reset the counter and return true. The setState
         instruction have to be in the spinOnce function
     *******************************************************************************/
@@ -382,9 +480,9 @@ class LidarController {
     };
 
     /*******************************************************************************
-      spinOnce : Main routine to simplify everything in ASYNC mode, checking the
+      spinOnce: Main routine to simplify everything in ASYNC mode, checking the
       status of the Lidar for each loop.
-        Cases :
+        Cases:
           * ACQUISITION_IN_PROGRESS => Checking the busyFlag
             Get the data and store it in distances
             -> Go to ACQUISITION_READY
@@ -404,7 +502,7 @@ class LidarController {
         uint8_t strength = 0;
         switch (getState(i)) {
           
-          case ACQUISITION_IN_PROGRESS : 
+          case ACQUISITION_IN_PROGRESS: 
 #if PRINT_DEBUG_INFO
             Serial.println(" ACQUISITION_IN_PROGRESS ");
 #endif
@@ -460,7 +558,7 @@ class LidarController {
             }
             break;
 
-          case SHUTING_DOWN :
+          case SHUTING_DOWN:
 #if PRINT_DEBUG_INFO
             Serial.println(" SHUTING_DOWN");
 #endif
@@ -483,7 +581,6 @@ class LidarController {
     bool resetOngoing = false;
     uint8_t count = 0;
 };
-
 
 #endif
 

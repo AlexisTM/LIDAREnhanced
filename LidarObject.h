@@ -20,6 +20,12 @@ enum LIDAR_MODE {
   DISTANCE_AND_VELOCITY = 3
 };
 
+enum LIDAR_TYPE {
+  I2C_TYPE = 0,
+  CONTINUOUS_I2C_TYPE = 1,
+  PWM_TYPE = 2
+};
+
 class LidarObject {
   public:
 /*******************************************************************************
@@ -33,6 +39,7 @@ class LidarObject {
 *******************************************************************************/
     void begin(uint8_t _EnablePin = 12, uint8_t _ModePin = 13, uint8_t _TrigPin = 11, uint8_t _Lidar = 0x62, uint8_t _configuration = 2,  LIDAR_MODE _mode = DISTANCE, char _name = 'A'){
       pinMode(_EnablePin, OUTPUT);
+    
       off();
       last_distance = 0;
       distance = 0;
@@ -63,17 +70,27 @@ class LidarObject {
     };
 
 /*******************************************************************************
+  beginPWM : Sets the pinMode of the trigger and the mode pin. It allows PWM 
+  readings but ... it makes I2C reading slower on v2. (not tested on v3).
+*******************************************************************************/
+    void beginPWM(){
+      pinMode(ModePin, INPUT);
+      pinMode(TrigPin, OUTPUT);
+    };
+
+
+/*******************************************************************************
   enable : ask for PWM reading and allow continuous readings
 *******************************************************************************/
     void enable(){
-      digitalWrite(ModePin, HIGH);
+      digitalWrite(TrigPin, LOW);
     };
 
 /*******************************************************************************
   disable : stops PWM reading and allow continuous readings
 *******************************************************************************/
     void disable(){
-      digitalWrite(ModePin, LOW);
+      digitalWrite(TrigPin, HIGH);
     };
 
 /*******************************************************************************
@@ -138,6 +155,14 @@ class LidarObject {
       if(notify_velocity_cb) notify_velocity_cb(this, dt);
     };
 
+/*******************************************************************************
+  change_type : change the acqusition type, has to be changed before being added
+    to the controller. Otherwise, reset it.
+*******************************************************************************/
+    void change_type(LIDAR_TYPE _type = I2C_TYPE){
+      type = _type;
+    };
+
     int last_distance = -1; // Last distance measured
     int distance = -1;      // Newest distance
     int velocity = 0;       // Newest velocity
@@ -155,6 +180,7 @@ class LidarObject {
     char name;
     LIDAR_STATE lidar_state = NEED_RESET;
     LIDAR_MODE mode = DISTANCE;
+    LIDAR_TYPE type = I2C_TYPE;
     void (*notify_distance_cb)(LidarObject * self);
     void (*notify_velocity_cb)(LidarObject * self, unsigned long dt);
 };
