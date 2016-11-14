@@ -65,12 +65,12 @@ ros::Publisher distance_publisher("flyingros/lasers/raw", &distance_msg);
 
 void beginLidars() {
   // Initialisation of the lidars objects
-  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, 'x');
-  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, 'X');
-  LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_AD, 2, 'y');
-  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_AD, 2, 'Z');
-  LZ5.begin(Z5_LASER_EN, Z5_LASER_PIN, Z5_LASER_AD, 2, 'y');
-  LZ6.begin(Z6_LASER_EN, Z6_LASER_PIN, Z6_LASER_AD, 2, 'Z');
+  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_TRIG, Z1_LASER_AD, 2, 'x');
+  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_TRIG, Z2_LASER_AD, 2, 'X');
+  LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_TRIG, Z3_LASER_AD, 2, 'y');
+  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_TRIG, Z4_LASER_AD, 2, 'Z');
+  LZ5.begin(Z5_LASER_EN, Z5_LASER_PIN, Z5_LASER_TRIG, Z5_LASER_AD, 2, 'y');
+  LZ6.begin(Z6_LASER_EN, Z6_LASER_PIN, Z6_LASER_TRIG, Z6_LASER_AD, 2, 'Z');
   
   // Initialisation of the controller
   Controller.begin(WIRE400K);

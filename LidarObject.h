@@ -31,7 +31,7 @@ class LidarObject {
 
   If fasti2c is true, use 400kHz I2C
 *******************************************************************************/
-    void begin(uint8_t _EnablePin = 2, uint8_t _ModePin = 1, uint8_t _Lidar = 0x62, uint8_t _configuration = 2,  LIDAR_MODE _mode = DISTANCE, char _name = 'A'){
+    void begin(uint8_t _EnablePin = 12, uint8_t _ModePin = 13, uint8_t _TrigPin = 11, uint8_t _Lidar = 0x62, uint8_t _configuration = 2,  LIDAR_MODE _mode = DISTANCE, char _name = 'A'){
       pinMode(_EnablePin, OUTPUT);
       off();
       last_distance = 0;
@@ -44,6 +44,7 @@ class LidarObject {
       address = _Lidar;
       EnablePin = _EnablePin;
       ModePin = _ModePin;
+      TrigPin = _TrigPin;
       name = _name;
     };
 

@@ -59,8 +59,8 @@ void distance_callback(LidarObject* self){
 
 void beginLidars() {
   // Initialisation of the lidars objects
-  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, DISTANCE, 'A');
-  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, DISTANCE, 'B');
+  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_TRIG, Z1_LASER_AD, 2, DISTANCE, 'A');
+  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_TRIG, Z2_LASER_AD, 2, DISTANCE, 'B');
   LZ1.setCallbackDistance(&distance_callback);
   LZ2.setCallbackDistance(&distance_callback);
   // Initialisation of the controller

@@ -63,10 +63,10 @@ long measureCount = 0;
 void setup()
 {
   Serial.begin(115200);
-  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, DISTANCE, 'A');
-  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, DISTANCE, 'B');
-  LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_AD, 2, DISTANCE, 'C');
-  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_AD, 2, DISTANCE, 'D');
+  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_TRIG, Z1_LASER_AD, 2, DISTANCE, 'A');
+  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_TRIG, Z2_LASER_AD, 2, DISTANCE, 'B');
+  LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_TRIG, Z3_LASER_AD, 2, DISTANCE, 'C');
+  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_TRIG, Z4_LASER_AD, 2, DISTANCE, 'D');
 
   LZ1.setCallbackDistance(&distance_callback);
   LZ2.setCallbackDistance(&distance_callback);

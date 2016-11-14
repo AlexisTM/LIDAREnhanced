@@ -53,8 +53,8 @@ long now, last;
 
 void beginLidars() {
   // Initialisation of the lidars objects
-  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_AD, 2, DISTANCE, 'x');
-  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_AD, 2, DISTANCE, 'X');
+  LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_TRIG, Z1_LASER_AD, 2, DISTANCE, 'x');
+  LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_TRIG, Z2_LASER_AD, 2, DISTANCE, 'X');
   
   // Initialisation of the controller
   Controller.begin(WIRE400K);
