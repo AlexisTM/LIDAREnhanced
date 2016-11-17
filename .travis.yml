@@ -6,13 +6,13 @@ install:
     - python -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
 
 script:
-  - platformio lib install https://github.com/AlexisTM/LIDAREnhanced/archive/master.zip
-  - platformio ci examples/Benchmark/Benchmark.ino  --board=uno --board=megaatmega1280 
-  - platformio ci examples/Callback/Callback.ino  --board=uno --board=megaatmega1280 
-  - platformio ci examples/DataOverSerial/DataOverSerial.ino  --board=uno --board=megaatmega1280 
-  - platformio ci examples/SignalPower/SignalPower.ino  --board=uno --board=megaatmega1280 
-  - platformio ci examples/SixLasersROS/SixLasersROS.ino  --board=uno --board=megaatmega1280 
-  - platformio ci examples/Velocity/Velocity.ino  --board=uno --board=megaatmega1280 
+  - platformio lib --global install https://github.com/AlexisTM/LIDAREnhanced/archive/master.zip
+  - platformio ci example/Benchmark/Benchmark.ino  --board=uno --board=megaatmega1280 
+  - platformio ci example/Callback/Callback.ino  --board=uno --board=megaatmega1280 
+  - platformio ci example/DataOverSerial/DataOverSerial.ino  --board=uno --board=megaatmega1280 
+  - platformio ci example/SignalPower/SignalPower.ino  --board=uno --board=megaatmega1280 
+  - platformio ci example/SixLasersROS/SixLasersROS.ino  --board=uno --board=megaatmega1280 
+  - platformio ci example/Velocity/Velocity.ino  --board=uno --board=megaatmega1280 
 notifications: 
   email:
     on_success: change
