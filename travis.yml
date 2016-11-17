@@ -16,7 +16,7 @@ script:
   - arduino --verify --board arduino:avr:uno $PWD/examples/SignalPower/SignalPower.ino
   - arduino --verify --board arduino:avr:uno $PWD/examples/SixLasersROS/SixLasersROS.ino
   - arduino --verify --board arduino:avr:uno $PWD/examples/Velocity/Velocity.ino
-notifications:
+notifications: 
   email:
     on_success: change
     on_failure: change
