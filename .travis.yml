@@ -4,7 +4,6 @@ python:
     
 install:
   - python -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
-  - platformio lib --global install file:///$PWD
 
 script:
   - platformio ci example/Benchmark/Benchmark.ino  --board=uno --board=megaatmega1280 
