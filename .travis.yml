@@ -6,6 +6,8 @@ install:
   - python -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
 
 script:
+  - export PLATFORMIO_LIB_DIR=$PWD
+  - echo $PLATFORMIO_LIB_DIR
   - platformio ci example/Benchmark/Benchmark.ino  --board=uno --board=megaatmega1280 
   - platformio ci example/Callback/Callback.ino  --board=uno --board=megaatmega1280 
   - platformio ci example/DataOverSerial/DataOverSerial.ino  --board=uno --board=megaatmega1280 
