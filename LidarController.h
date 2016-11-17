@@ -15,8 +15,8 @@
 #define FORCE_RESET_OFFSET        true
 #define ENABLE_STRENGTH_MEASURE   true
 
+// For debug purpose
 #define PRINT_DEBUG_INFO          false
-#define LIDAR_TIMEOUT_MS          20
 #define MAX_LIDARS                8
 // Force reset on errors. It resets the lasers on MAX_NACKS error.
 // An error is a misreading (nack) or an incoherent value
@@ -200,9 +200,8 @@ class LidarController {
       Lidar: Address of the Lidar (0x62 by default)
     *******************************************************************************/
     void configure(uint8_t Lidar = 0, uint8_t configuration = 2) {
-      uint8_t nack = 0;
       // REG_SIG_CONT_VAL = Maximum acquisition count, default 0x80
-      // REG_ACQ_CONFIG = Burst measurement count control, default 0x08
+      // REG_ACQ_CONFIG = Acquisition mode control, default 0x08
       // REG_THRESHOLD_BYPASS = Peak detection threshold bypass, default 0x00
       switch (configuration){
         case 0: // Default mode, balanced performance
@@ -241,7 +240,6 @@ class LidarController {
           I2C.write(lidars[Lidar]->address, REG_THRESHOLD_BYPASS, 0xb0);
         break;
       }
-      shouldIncrementNack(Lidar, nack);
     };
 
     /*******************************************************************************
@@ -530,7 +528,7 @@ class LidarController {
 #if FORCE_RESET_OFFSET
               setOffset(i, 0x00);
 #endif
-              lidars[i]->lastMeasure = micros();
+              lidars[i]->lastMeasureTime = micros();
             } else {
               if(lidars[i]->checkLastMeasure()){
                 setState(i, SHUTING_DOWN);
@@ -556,7 +554,7 @@ class LidarController {
               postReset(i);
               configure(i, lidars[i]->configuration);
               async(i);
-              lidars[i]->lastMeasure = micros();
+              lidars[i]->lastMeasureTime = micros();
               setState(i, ACQUISITION_IN_PROGRESS);
             }
             break;

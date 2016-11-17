@@ -6,6 +6,9 @@
 #ifndef LIDAR_OBJECT_H
 #define LIDAR_OBJECT_H
 
+#define LIDAR_RESET_US            20000
+#define LIDAR_TIMEOUT_US          200000
+
 enum LIDAR_STATE {
   SHUTING_DOWN = 240,       // Shutdown the laser to reset it
   NEED_RESET = 48,          // Too much outliers, need to reset
@@ -109,14 +112,14 @@ class LidarObject {
       if(lidar_state != RESET_PENDING)
         return true;
 
-      return (micros() - timeReset > 20000);
+      return (micros() - timeReset > LIDAR_RESET_US);
     };
 
 /*******************************************************************************
   checkLastMeasure : If the laser do not give new data, simply reset it
 *******************************************************************************/
     bool checkLastMeasure(){
-      return (micros() - lastMeasure > 200000);
+      return (micros() - lastMeasureTime > LIDAR_TIMEOUT_US);
     };
 
 /*******************************************************************************
@@ -176,7 +179,7 @@ class LidarObject {
     uint8_t ModePin;
     uint8_t TrigPin;
     
-    long lastMeasure = 0;
+    long lastMeasureTime = 0;
     char name;
     LIDAR_STATE lidar_state = NEED_RESET;
     LIDAR_MODE mode = DISTANCE;
