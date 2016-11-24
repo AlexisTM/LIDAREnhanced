@@ -6,13 +6,13 @@ install:
   - python -c "$(curl -fsSL https://raw.githubusercontent.com/platformio/platformio/master/scripts/get-platformio.py)"
 env:
   - PLATFORMIO_CI_SRC=$PWD
+  - PLATFORMIO_LIB_DIR=$PWD
 script:
-  - export PLATFORMIO_LIB_DIR=$PWD
-  - platformio ci --lib $PWD example/Benchmark/Benchmark.ino  --board=uno --board=megaatmega1280 
-  - platformio ci --lib $PWD example/Callback/Callback.ino  --board=uno --board=megaatmega1280 
-  - platformio ci --lib $PWD example/DataOverSerial/DataOverSerial.ino  --board=uno --board=megaatmega1280 
-  - platformio ci --lib $PWD example/SignalPower/SignalPower.ino  --board=uno --board=megaatmega1280 
-  - platformio ci --lib $PWD example/Velocity/Velocity.ino  --board=uno --board=megaatmega1280 
+  - platformio ci --lib "$PWD" example/Benchmark/Benchmark.ino  --board=uno --board=megaatmega1280 
+  - platformio ci --lib "$PWD" example/Callback/Callback.ino  --board=uno --board=megaatmega1280 
+  - platformio ci --lib "$PWD" example/DataOverSerial/DataOverSerial.ino  --board=uno --board=megaatmega1280 
+  - platformio ci --lib "$PWD" example/SignalPower/SignalPower.ino  --board=uno --board=megaatmega1280 
+  - platformio ci --lib "$PWD" example/Velocity/Velocity.ino  --board=uno --board=megaatmega1280 
 notifications: 
   email:
     on_success: change
