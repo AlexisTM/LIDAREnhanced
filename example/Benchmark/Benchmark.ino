@@ -8,9 +8,9 @@
 ------------------------------------------------------------------------------*/
 
 #include <Wire.h>
-#include "I2CFunctions.h" 
-#include "LidarObject.h"
-#include "LidarController.h"
+#include <I2CFunctions.h> 
+#include <LidarObject.h>
+#include <LidarController.h>
 
 #define LIDARLITE_ADDR_DEFAULT 0x62
 

@@ -1,6 +1,6 @@
-#include "I2CFunctions.h"
-#include "LidarObject.h"
-#include "LidarController.h"
+#include <I2CFunctions.h>
+#include <LidarObject.h>
+#include <LidarController.h>
 
 #include <Wire.h>
 #define WIRE400K false
