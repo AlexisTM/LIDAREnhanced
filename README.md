@@ -1,4 +1,4 @@
-LIDARLite v3 ENHANCED
+LIDARLite v3 ENHANCED [![Build Status](https://travis-ci.org/AlexisTM/LIDAREnhanced.svg?branch=master)](https://travis-ci.org/AlexisTM/LIDAREnhanced)
 =========================
 
 Introduction
