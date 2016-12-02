@@ -369,7 +369,7 @@ class LidarController {
       signalStrength:
         - Read the signal strength of the last reading
     *******************************************************************************/
-    int signalStrength(uint8_t Lidar, uint8_t * signalStrengthArray) {
+    uint8_t signalStrength(uint8_t Lidar, uint8_t * signalStrengthArray) {
       uint8_t nack = I2C.readByte(lidars[Lidar]->address, REG_SIGNAL_STRENGTH, signalStrengthArray);
       shouldIncrementNack(Lidar, nack);
       return nack;

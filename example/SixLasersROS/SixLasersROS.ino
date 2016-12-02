@@ -2,7 +2,7 @@
 #include "LidarController.h"
 #include "I2CFunctions.h"
 #include <ros.h>
-#include <flyingros_msgs/Distance.h>
+#include <flyingros_msgs/MultiEcho.h>
 
 #include <Wire.h>
 #define WIRE400K false

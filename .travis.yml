@@ -12,6 +12,7 @@ script:
   - platformio ci --lib="." example/DataOverSerial/DataOverSerial.ino  --board=uno --board=megaatmega1280 
   - platformio ci --lib="." example/SignalPower/SignalPower.ino  --board=uno --board=megaatmega1280 
   - platformio ci --lib="." example/Velocity/Velocity.ino  --board=uno --board=megaatmega1280 
+  - platformio ci --lib="." example/OneLaser/OneLaser.ino  --board=uno --board=megaatmega1280 
 notifications: 
   email:
     on_success: change
