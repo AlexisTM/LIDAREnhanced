@@ -166,9 +166,9 @@ class LidarObject {
       type = _type;
     };
 
-    int last_distance = -1; // Last distance measured
-    int distance = -1;      // Newest distance
-    int velocity = 0;       // Newest velocity
+    int16_t last_distance = -1; // Last distance measured
+    int16_t distance = -1;      // Newest distance
+    float velocity = 0;       // Newest velocity
     uint8_t strength = 0;   // Newest signal strength
 
     uint8_t nacksCount = 0;

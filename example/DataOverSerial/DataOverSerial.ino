@@ -1,6 +1,6 @@
-#include <LidarObject.h>
-#include <LidarController.h>
-#include <I2CFunctions.h>
+#include "LidarObject.h"
+#include "LidarController.h"
+#include "I2CFunctions.h"
 
 #include <Wire.h>
 #define WIRE400K false
@@ -60,8 +60,8 @@ void beginLidars() {
   LZ1.begin(Z1_LASER_EN, Z1_LASER_PIN, Z1_LASER_TRIG, Z1_LASER_AD, 2, DISTANCE, 'x');
   LZ2.begin(Z2_LASER_EN, Z2_LASER_PIN, Z2_LASER_TRIG, Z2_LASER_AD, 2, DISTANCE, 'X');
   LZ3.begin(Z3_LASER_EN, Z3_LASER_PIN, Z3_LASER_TRIG, Z3_LASER_AD, 2, DISTANCE, 'y');
-  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_TRIG, Z4_LASER_AD, 2, DISTANCE, 'Z');
-  LZ5.begin(Z5_LASER_EN, Z5_LASER_PIN, Z5_LASER_TRIG, Z5_LASER_AD, 2, DISTANCE, 'y');
+  LZ4.begin(Z4_LASER_EN, Z4_LASER_PIN, Z4_LASER_TRIG, Z4_LASER_AD, 2, DISTANCE, 'Y');
+  LZ5.begin(Z5_LASER_EN, Z5_LASER_PIN, Z5_LASER_TRIG, Z5_LASER_AD, 2, DISTANCE, 'z');
   LZ6.begin(Z6_LASER_EN, Z6_LASER_PIN, Z6_LASER_TRIG, Z6_LASER_AD, 2, DISTANCE, 'Z');
   
   // Initialisation of the controller
@@ -99,10 +99,10 @@ void laserprint(){
     Serial.print("\t");
     Serial.print(Controller.lidars[i]->distance);
     Serial.print("\t");
-    Serial.print(Controller.lidars[i]->velocity);
-    Serial.print("\t");
-    Serial.print(Controller.lidars[i]->strength);
-    Serial.print("\t");
+    //Serial.print(Controller.lidars[i]->velocity);
+    //Serial.print("\t");
+    //Serial.print(Controller.lidars[i]->strength);
+    //Serial.print("\t");
   }
   Serial.println("");
 }

@@ -4,6 +4,21 @@
 #include <ros.h>
 #include <flyingros_msgs/MultiEcho.h>
 
+/*
+
+Multi Echo message from AlexisTM/flyingros_msgs
+
+uint8 SHUTING_DOWN = 240       # Shutdown the laser to reset it
+uint8 NEED_RESET = 48          # Too much outliers, need to reset
+uint8 RESET_PENDING = 80       # Wait 15ms after you reset the Lidar, we are waiting in this state
+uint8 ACQUISITION_IN_PROGRESS = 64 # The acquisition in on progress
+
+int16[] measures # Data
+uint8[] strength # Reading strength
+uint8[] status # Laser status
+
+*/
+
 #include <Wire.h>
 #define WIRE400K false
 /*** Defines : CONFIGURATION ***/
@@ -59,9 +74,12 @@ long now, last;
 
 // ROS Communication
 ros::NodeHandle nh;
-flyingros_msgs::Distance distance_msg;
+static flyingros_msgs::MultiEcho distance_msg;
+static int16_t distances[6] = {0,0,0,0,0,0};
+static uint8_t strengths[6] = {0,0,0,0,0,0};
+static uint8_t statuses[6] = {0,0,0,0,0,0};
 
-ros::Publisher distance_publisher("flyingros/lasers/raw", &distance_msg);
+ros::Publisher distance_publisher("/flyingros/lasers/raw", &distance_msg);
 
 void beginLidars() {
   // Initialisation of the lidars objects
@@ -84,33 +102,40 @@ void beginLidars() {
 }
 
 void setup() {
-  Serial.begin(57600);
-  while (!Serial);
   beginLidars();
   last = micros();
   nh.initNode();
   nh.advertise(distance_publisher);
 }
 
+
 void loop() {
-  nh.spinOnce();
   Controller.spinOnce();
   now = micros();
   if(now - last > DELAY_SEND_MICROS){
     last = micros();
-    //laserprint();
     laserpublish();
   } 
+  nh.spinOnce();
 }
 
 void laserpublish(){
-  distance_msg.lasers_length = 6;
-  distance_msg.status_length = 6;
-
+  /*if(!nh.connected()){
+    return;
+  }*/
   for(uint8_t i = 0; i < NUMBER_OF_LASERS; i++){
-    distance_msg.lasers[i] = Controller.lidars[i]->distance;
-    distance_msg.status[i] = Controller.lidars[i]->strength;
+    distances[i] = Controller.lidars[i]->distance;
+    strengths[i] = Controller.lidars[i]->strength;
+    statuses[i] = Controller.lidars[i]->lidar_state;
   }
+
+  distance_msg.measures_length = NUMBER_OF_LASERS;
+  distance_msg.strengths_length = NUMBER_OF_LASERS;
+  distance_msg.statuses_length = NUMBER_OF_LASERS;
+  
+  distance_msg.measures = distances;
+  distance_msg.strengths = strengths;
+  distance_msg.statuses = statuses;
   
   distance_publisher.publish(&distance_msg);
 }

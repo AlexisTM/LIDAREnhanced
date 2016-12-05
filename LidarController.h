@@ -322,7 +322,7 @@ class LidarController {
       uint8_t distanceArray[2];
       uint8_t nackCatcher = I2C.readWord(lidars[Lidar]->address, MEASURED_VALUE_REGISTER, distanceArray);
       shouldIncrementNack(Lidar, nackCatcher);
-      int distance = (distanceArray[0] << 8) + distanceArray[1];
+      int16_t distance = (distanceArray[0] << 8) + distanceArray[1];
       *data = distance;
       return nackCatcher;
     };
@@ -584,4 +584,3 @@ class LidarController {
 };
 
 #endif
-
