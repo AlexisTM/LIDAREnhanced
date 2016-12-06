@@ -104,7 +104,7 @@ void beginLidars() {
 void setup() {
   beginLidars();
   last = micros();
-  nh.initNode();
+  nh.initNode(115200);
   nh.advertise(distance_publisher);
 }
 
