@@ -2,7 +2,8 @@
 #define I2C_FUNCTIONS_H
 
 #include <Arduino.h>
-#include <Wire.h>
+// #include <Wire.h>
+#include <i2c_t3.h>
 
 #define STOP_CONDITION_I2C true
 class I2CFunctions {
