@@ -5,7 +5,7 @@ Introduction
 --------------
 This library tends to improve the **efficiency** and the **robustness** of the poor original acquisition library. It is originally released for the LidarLite v2 (deprecated) and compatible with the LidarLite v3 (release from Garmin) lasermeter.
 
-This fork of the library has been modified to work on a Teensy 3.x (3.5) 32-bit board. It requires that you have i2c_t3.h library (https://github.com/nox771/i2c_t3) installed. 
+The Teensy 3.x (3.5) 32-bit board support has been added by [adam-sampson](http://github.com/adam-sampson). If you use it, replace `#include <Wire.h>` by `#include <i2c_t3.h>` in the examples and install the [i2c_t3 library](https://github.com/nox771/i2c_t3)
 
 Improvements over the original library
 --------------------
@@ -446,3 +446,4 @@ Pull requests are welcome :D
 Credits 
 ------
 * Alexis Paques (alexis[dot]paques[at]gmail[dot]com)
+* Adam Sampson
