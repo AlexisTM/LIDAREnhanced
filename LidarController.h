@@ -3,7 +3,8 @@
 
 #include "I2CFunctions.h"
 #include "LidarObject.h"
-#include <Wire.h>
+// #include <Wire.h>
+#include <i2c_t3.h>
 
 // Wait between I2C transactions in µs
 // One bit every 10µs (2.5µs in 400kHz)
@@ -312,13 +313,15 @@ class LidarController {
       if(biasCorrection) nack = I2C.write(lidars[Lidar]->address, REG_ACQ_COMMAND, DATA_MEASURE_WITH_BIAS);
       else nack = I2C.write(lidars[Lidar]->address, REG_ACQ_COMMAND, DATA_MEASURE_WITHOUT_BIAS);
       shouldIncrementNack(Lidar, nack);
+	  return nack;
     };
 
     /*******************************************************************************
       distance:
         - Read the measured value from data registers
     *******************************************************************************/
-    uint8_t distance(uint8_t Lidar, int * data) {
+    //uint8_t distance(uint8_t Lidar, int * data) {
+	uint8_t distance(uint8_t Lidar, int16_t * data) {
       uint8_t distanceArray[2];
       uint8_t nackCatcher = I2C.readWord(lidars[Lidar]->address, MEASURED_VALUE_REGISTER, distanceArray);
       shouldIncrementNack(Lidar, nackCatcher);
@@ -353,7 +356,7 @@ class LidarController {
         This has to be worked on, this is the original implementation without the 
           blocking architecture
     *******************************************************************************/
-    int velocity(uint8_t Lidar, int * data) {
+    int16_t velocity(uint8_t Lidar, int16_t * data) {
       // Set in velocity mode
       I2C.write(lidars[Lidar]->address, REG_ACQ_CONFIG, DATA_VELOCITY_MODE_DATA);
       //  Write 0x04 to register 0x00 to start getting distance readings
@@ -362,7 +365,7 @@ class LidarController {
       uint8_t velocityArray[1];
       uint8_t nack = I2C.readByte(lidars[Lidar]->address, REG_VELOCITY, velocityArray);
 
-      return((int)((char)velocityArray[0]));
+      return((int16_t)((char)velocityArray[0]));
     };
 
     /*******************************************************************************
@@ -402,7 +405,7 @@ class LidarController {
       We could use the async() method in ACQUISITION_DONE, but it would need to spin
       one time more before starting the acquisition again
     *******************************************************************************/
-    uint8_t distanceAndAsync(uint8_t Lidar, int * data) {
+    uint8_t distanceAndAsync(uint8_t Lidar, int16_t * data) {
       uint8_t nackCatcher = distance(Lidar, data);
       // if error reading the value, try ONCE again
       if (nackCatcher)
