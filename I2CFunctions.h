@@ -2,7 +2,10 @@
 #define I2C_FUNCTIONS_H
 
 #include <Arduino.h>
-#if defined(__MK20DX256__)|| defined(__MK20DX128__)
+
+// For more defines for Teensy (granularity), see: 
+// https://arduino.stackexchange.com/questions/21137/arduino-how-to-get-the-board-type-in-code 
+#if defined(TEENSYDUINO)
 #include <i2c_t3.h>
 #else
 #include <Wire.h>
