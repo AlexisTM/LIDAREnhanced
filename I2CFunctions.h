@@ -2,8 +2,11 @@
 #define I2C_FUNCTIONS_H
 
 #include <Arduino.h>
-// #include <Wire.h>
+#if defined(__MK20DX256__)|| defined(__MK20DX128__)
 #include <i2c_t3.h>
+#else
+#include <Wire.h>
+#endif
 
 #define STOP_CONDITION_I2C true
 class I2CFunctions {

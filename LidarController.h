@@ -3,9 +3,6 @@
 
 #include "I2CFunctions.h"
 #include "LidarObject.h"
-// #include <Wire.h>
-#include <i2c_t3.h>
-
 // Wait between I2C transactions in µs
 // One bit every 10µs (2.5µs in 400kHz)
 // Wait at least 5 bits to wait for slave answer
