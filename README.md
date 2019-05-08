@@ -159,7 +159,7 @@ Check the [full example](example/Callback)) !
 
 // Define the callback
 void distance_callback(LidarObject* self){
-  // self is the laser transmiting the interupt. 
+  // self is the laser transmitting the interrupt. 
   Serial.print(self->name);
   Serial.print(":");
   Serial.println(self->distance);
@@ -238,7 +238,7 @@ Serial.print(Controller.lidars[0]->distance);
 #define Z5_LASER_PIN 14
 #define Z6_LASER_PIN 17
 //Define address of lasers
-//Thoses are written during initialisation
+//Those are written during initialisation
 // default address : 0x62
 #define Z1_LASER_AD 0x6E
 #define Z2_LASER_AD 0x66
@@ -347,7 +347,7 @@ void laserprint(){
 #define Z5_LASER_PIN 14
 #define Z6_LASER_PIN 17
 //Define address of lasers
-//Thoses are written during initialisation
+//Those are written during initialisation
 // default address : 0x62
 #define Z1_LASER_AD 0x6E
 #define Z2_LASER_AD 0x66
@@ -435,7 +435,7 @@ void laserprint(){
 Todo
 --------
 - Velocity readings
-- Independant callbacks for each lasers or when each are done, or one single callback for every lasers
+- Independent callbacks for each lasers or when each are done, or one single callback for every lasers
 
 Pull requests 
 ----------
