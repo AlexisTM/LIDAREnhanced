@@ -1,5 +1,4 @@
 #include <Arduino.h>
-#include <Wire.h>
 #include "I2CFunctions.h"
 // We got a Lidar object per laser. 
 
@@ -128,6 +127,7 @@ class LidarObject {
 *******************************************************************************/
     bool resetNacksCount(){
       nacksCount = 0;
+	  return 1;
     };
 
 /*******************************************************************************
