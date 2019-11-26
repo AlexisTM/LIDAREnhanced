@@ -12,7 +12,7 @@
 // Mode pin, can be unplugged
 #define Z1_LASER_PIN 13
 //Define address of lasers
-//Thoses are written during initialisation
+//Those are written during initialisation
 // default address : 0x62
 #define Z1_LASER_AD 0x6E
 

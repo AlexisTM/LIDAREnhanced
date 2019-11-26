@@ -27,7 +27,7 @@
 #define ERROR_MAX_DIFF_VALUE      100
 
 
-// Registers are separeted between READ & WRITE registers.
+// Registers are separated between READ & WRITE registers.
 // Indeed the result reading or writing to the same internal register does not affect
 // the Lidar the same way
 // All registers are not used here, but they are ready to be used in newer versions
@@ -49,10 +49,10 @@
  * - 0 Peak detected
  * - 1 No peak detected
  * bit 2: Signal overflow flag
- * - 0 Oveflow detected
+ * - 0 Overflow detected
  * - 1 No overflow
  * bit 1: Reference overflow flag
- * - 0 Oveflow detected
+ * - 0 Overflow detected
  * - 1 No overflow
  * bit 0: Busy flag
  * - 0 Ready 
@@ -332,7 +332,7 @@ class LidarController {
         - Scale the velocity measures
 
         CAUTION, different than the Scale function from LidarLite (not 1,2,3,4 but 
-        the actual period measurment, Note the x2 between 100 and 0xC8 (200))
+        the actual period measurement, Note the x2 between 100 and 0xC8 (200))
 
         Measurement  | Velocity         | Register         
         Period (ms)  | Scaling (m/sec)  | 045 Load Value   
@@ -469,7 +469,7 @@ class LidarController {
 
     /*******************************************************************************
       checkNacks: Returns if the laser needs or not a reset
-        if have to be resetted, reset the counter and return true. The setState
+        if have to be reset, reset the counter and return true. The setState
         instruction have to be in the spinOnce function
     *******************************************************************************/
     bool checkNacks(uint8_t Lidar = 0){

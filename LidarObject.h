@@ -104,7 +104,7 @@ class LidarObject {
     };
 
 /*******************************************************************************
-  checkTimer : Check the reset timer to see if the laser is correctly resetted
+  checkTimer : Check the reset timer to see if the laser is correctly reset
 
   The laser takes 20ms to reset
 *******************************************************************************/
@@ -124,7 +124,7 @@ class LidarObject {
 
 /*******************************************************************************
   resetNacksCount : The nack counter makes the Arduino able to know if a laser 
-  needs to be resetted
+  needs to be reset
 *******************************************************************************/
     bool resetNacksCount(){
       nacksCount = 0;
