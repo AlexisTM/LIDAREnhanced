@@ -172,8 +172,6 @@ class I2CFunctions {
     };
 };
 
-
-I2CFunctions I2C;
 extern I2CFunctions I2C;
 
 #endif
