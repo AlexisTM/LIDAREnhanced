@@ -318,7 +318,7 @@ class LidarController {
       distance:
         - Read the measured value from data registers
     *******************************************************************************/
-    uint8_t distance(uint8_t Lidar, int * data) {
+    uint8_t distance(uint8_t Lidar, int16_t * data) {
       uint8_t distanceArray[2];
       uint8_t nackCatcher = I2C.readWord(lidars[Lidar]->address, MEASURED_VALUE_REGISTER, distanceArray);
       shouldIncrementNack(Lidar, nackCatcher);
@@ -402,7 +402,7 @@ class LidarController {
       We could use the async() method in ACQUISITION_DONE, but it would need to spin
       one time more before starting the acquisition again
     *******************************************************************************/
-    uint8_t distanceAndAsync(uint8_t Lidar, int * data) {
+    uint8_t distanceAndAsync(uint8_t Lidar, int16_t * data) {
       uint8_t nackCatcher = distance(Lidar, data);
       // if error reading the value, try ONCE again
       if (nackCatcher)
