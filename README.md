@@ -25,11 +25,11 @@ How fast is it ?
 
 The maximal speed is mainly limited by I2C speed more than the configuration. Therefore, I advise you to choose the most *stable* than the most speedy. The next step to improve performances is to sync the laser with the expected acquisition time depending on the distance precedently measured. It would allow to improve acquisition and reduce the I2C usage. Also, it could be great to use the constant acquisition.
 
-* 100 kHz
+* On 100 kHz i2c bus
   - 800Hz With FORCE_RESET_OFFSET **and** ENABLE_STRENGTH_MEASURE to **true**
   - 1050Hz With FORCE_RESET_OFFSET **or** ENABLE_STRENGTH_MEASURE to **true**
   - 1300Hz With FORCE_RESET_OFFSET **and** ENABLE_STRENGTH_MEASURE to **false**
-* 400 kHz
+* On 400 kHz i2c bus
   - 1325Hz With FORCE_RESET_OFFSET **and** ENABLE_STRENGTH_MEASURE to **true**
   - 1575Hz With FORCE_RESET_OFFSET **or** ENABLE_STRENGTH_MEASURE to **true**
   - 2080Hz With FORCE_RESET_OFFSET **and** ENABLE_STRENGTH_MEASURE to **false**
