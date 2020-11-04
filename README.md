@@ -1,10 +1,12 @@
-LIDARLite v3 ENHANCED [![Build Status](https://travis-ci.org/AlexisTM/LIDAREnhanced.svg?branch=master)](https://travis-ci.org/AlexisTM/LIDAREnhanced)
+LIDARLite v3 ENHANCED
 =========================
 
 Introduction
 --------------
-This library tends to improve the **efficiency** and the **robustness** of the poor original acquisition library. It is originally released for the LidarLite v2 (deprecated) and compatible with the LidarLite v3 (release from Garmin) lasermeter.
+This library tends to improve the **efficiency** and the **robustness** of the poor original acquisition library. It is originally released for the LidarLite v2 (deprecated) and compatible with the LidarLite v3 (release from Garmin) lasermeter. 
 
+> It is important to note this was developed for a thesis and was not maintained afterwards as I do not have the hardware anymore. Feel free to refactor it, and improve code quality. If you want to maintain the library, I would happily give you ownership.
+> At the time (2016), we needed much faster measurements than the provided library was capable of.
 Improvements over the original library
 --------------------
 - *Asynchronous acquisition*
